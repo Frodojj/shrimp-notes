@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	
+	<!--
+	 Jimmy Cerra
+	 25 Sept. 2021
+	 MIT License
+	 
+	 Copyright 2021 James Francis Cerra
+	 
+	 Permission is hereby granted, free of charge, to any person obtaining a
+	 copy of this software and associated documentation files (the "Software"),
+	 to deal in the Software without restriction, including without limitation
+	 the rights to use, copy, modify, merge, publish, distribute, sublicense,
+	 and/or sell copies of the Software, and to permit persons to whom the
+	 Software is furnished to do so, subject to the following conditions:
+	 
+	 The above copyright notice and this permission notice shall be included in
+	 all copies or substantial portions of the Software.
+	 
+	 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+	 THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+	 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+	 DEALINGS IN THE SOFTWARE.
+	-->
+	
+	<title>Shrimp Notes</title>
+	
+	<link rel="manifest" href="app.webmanifest">
+	<link rel="stylesheet" href="stylesheets/main.css">
+	
+	<script defer src="scripts/svg.js"></script>
+	<script defer src="scripts/drawing.js"></script>
+	<script defer src="scripts/main.js"></script>
+</head>
+<svg class="defs">
+	<defs>
+		<symbol id="pencil" viewBox="0 -10 100 210">
+			<path class="tip" d="m 30 60 l 20 -60 l 20 60" />
+			<path 
+				d="m 0 200 v -50 l 30 -90 h 40 l 30 90 v 50 m 0 -50 h -100" />
+		</symbol>
+		<symbol id="pen" viewBox="0 -10 100 210">
+			<path class="tip" d="m 40 60 v -20 c 1 -13 19 -13 20 0 v 20" />
+			<path
+				d="m 0 200 v -50 l 30 -90 h 40 l 30 90 v 50 m 0 -50 h -100" />
+		</symbol>
+		<symbol id="eraser" viewBox="0 -10 100 210">
+			<path d="m 5 130 v -60 q 0 -10 10 -10 h 70 q 10 0 10 10 v 60" />
+			<path d="m 0 200 v -70 h 100 v 70 m 0 -50 h -100" />
+		</symbol>
+		<symbol id="select" viewBox="0 -10 100 210">
+			<rect x="0" y="25" width="100" height="150" 
+				stroke-dasharray="25 19" />
+			<path class="cardinal" d="m 35 100 h 30 m -15 -15 v 30" />
+		</symbol>
+		<symbol id="hand" viewBox="0 -10 100 210">
+			<path d="m 0 200 v -50 c 1 -13 19 -13 20 0" />
+			<path d="m 20 200 v -120 c 1 -13 19 -13 20 0 v 70" />
+			<path d="m 40 120 c 1 -13 19 -13 20 0 v 30" />
+			<path d="m 60 125 c 1 -13 19 -13 20 0 v 25" />
+			<path d="m 80 130 c 1 -13 19 -13 20 0 v 70" />
+		</symbol>
+		<symbol id="more" viewBox="0 0 100 100">
+			<circle class="ellipse" cx="2.5" cy="50" r="5" />
+			<circle class="ellipse" cx="50" cy="50" r="5" />
+			<circle class="ellipse" cx="97.5" cy="50" r="5" />
+		</symbol>
+	</defs>
+</svg>
+<header>
+	<form autocomplete="off">
+		<ul class="toolbar">
+			<li>
+				<label>
+					<input name="tool" type="radio" value="removeTool" checked>
+					<svg class="icon"><use href="#hand" /></svg>
+				</label>
+			<li>
+				<label>
+					<input name="tool" type="radio" value="removeShape">
+					<svg class="icon"><use href="#eraser" /></svg>
+				</label>
+
+			<li>			
+				<input id="pen1" name="tool" type="radio" value="addPath"
+					data-tool="pen1">
+				<details class="props">
+					<summary>
+						<svg class="more icon"><use href="#more" /></svg>
+					</summary>
+					<ul>
+						<li>
+							<label>Tool size: 
+								<input name="strokeWidth" data-tool="pen1"
+									type="range" min="0" max="5" value="1">
+							</label>
+						<li>
+							<label>Tool color:
+								<input name="strokeColor"  data-tool="pen1"
+									type="color" value="#000000">
+							</label>
+					</ul>
+				</details>
+				<label for="pen1">
+					<svg class="icon"><use href="#pen" /></svg>
+				</label>
+			<li>
+				<input id="pen2" name="tool" type="radio" value="addPath"
+					data-tool="pen2">
+				<details class="props">
+					<summary>
+						<svg class="more icon"><use href="#more" /></svg>
+					</summary>
+					<ul>
+						<li>
+							<label>Tool size: 
+								<input name="strokeWidth" data-tool="pen2"
+									type="range" min="0" max="5" value="1">
+							</label>
+						<li>
+							<label>Tool color:
+								<input name="strokeColor"  data-tool="pen2"
+									type="color" value="#000000">
+							</label>
+					</ul>
+				</details>
+				<label for="pen2">
+					<svg class="icon"><use href="#pen" /></svg>
+				</label>
+			<li>
+				<input id="pen3" name="tool" type="radio" value="addPath"
+					data-tool="pen3">
+				<details class="props">
+					<summary>
+						<svg class="more icon"><use href="#more" /></svg>
+					</summary>
+					<ul>
+						<li>
+							<label>Tool size: 
+								<input name="strokeWidth" data-tool="pen3"
+									type="range" min="0" max="5" value="1">
+							</label>
+						<li>
+							<label>Tool color:
+								<input name="strokeColor"  data-tool="pen3"
+									type="color" value="#000000">
+							</label>
+					</ul>
+				</details>
+				<label for="pen3">
+					<svg class="icon"><use href="#pen" /></svg>
+				</label>
+			<li>
+				<input id="pen4" name="tool" type="radio" value="addPath"
+					data-tool="pen4">
+				<details class="props">
+					<summary>
+						<svg class="more icon"><use href="#more" /></svg>
+					</summary>
+					<ul>
+						<li>
+							<label>Tool size: 
+								<input name="strokeWidth" data-tool="pen4"
+									type="range" min="0" max="5" value="1">
+							</label>
+						<li>
+							<label>Tool color:
+								<input name="strokeColor"  data-tool="pen4"
+									type="color" value="#000000">
+							</label>
+					</ul>
+				</details>
+				<label for="pen4">
+					<svg class="icon"><use href="#pen" /></svg>
+				</label>
+		</ul>
+	</form>
+</header>
+<main></main>
