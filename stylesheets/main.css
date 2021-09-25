@@ -1,0 +1,208 @@
+/*
+ Jimmy Cerra
+ 10 Sept. 2021
+ MIT License
+ 
+ Copyright 2021 James Francis Cerra
+ 
+ Permission is hereby granted, free of charge, to any person obtaining a copy of
+ this software and associated documentation files (the "Software"), to deal in
+ the Software without restriction, including without limitation the rights to
+ use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+ of the Software, and to permit persons to whom the Software is furnished to do
+ so, subject to the following conditions:
+ 
+ The above copyright notice and this permission notice shall be included in all
+ copies or substantial portions of the Software.
+ 
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ SOFTWARE.
+ */
+
+:root {
+	/* Colors */
+	/* active icon, alert overlay, hover over icon, inactive icon */
+	--active-border-color: hsl(207deg 75% 40% / 50%);
+	--active-color: hsl(207deg 100% 60% / 33%);
+	--alert-border-color: transparent;
+	--alert-color: var(--active-color); /* also try 33deg */
+	--hover-border-color: hsl(207deg 75% 40% / 20%);
+	--hover-color: hsl(207deg 100% 60% / 20%);
+	--inactive-color: transparent;
+	--inactive-border-color: transparent;
+
+	/* Sizes */
+	--border: 1px;
+	--curve: .5rem;
+	--icon: 2.3em; /* Apple toolbar guideline: 24 to 28 pt */
+	
+	/* Derived sizes */
+	--alert-curves: var(--curve) var(--curve) 0 0;
+	--icon-borders: var(--border);
+	--icon-curves: var(--curve);
+	--icon-open-borders: var(--border);
+	--icon-open-curves: var(--curve) var(--curve) 0 0;
+	--more: calc(var(--icon) / 2);
+	--more-borders: 0 var(--border);
+	--more-curves: 0;
+
+	color-scheme: dark light;
+	touch-action: none;
+}
+
+/* For SVG */
+.defs {
+	display: none;
+}
+
+/* For SVG */
+.ellipse,
+.tip {
+	fill: currentColor;
+}
+
+/* For SVG toolbar icons */
+.icon {
+	background-color: var(--inactive-color);
+	border: solid var(--inactive-border-color);
+	border-radius: var(--icon-curves);
+	border-width: var(--icon-borders);
+	fill: none;
+	height: var(--icon);
+	stroke: currentColor;
+	stroke-width: 10px; /* Internal to SVG used. */
+	vertical-align: bottom;
+	width: var(--icon);
+}
+
+.icon:hover {
+	background-color: var(--hover-color);
+	border-color: var(--hover-border-color);
+}
+
+/* for input in lable or before it.*/
+:checked ~ .icon, :checked ~ label > .icon {
+	background-color: var(--active-color);
+	border-color: var(--active-border-color);
+}
+
+/* Smaller SVG icon */
+.icon.more {
+	border-radius: var(--more-curves);
+	border-width: var(--more-borders);
+	height: var(--more);
+}
+
+/* TODO: Disabled hover style for "more icon" cuz problems with touch. */
+.icon.more:hover {
+	background-color: var(--inactive-color);
+	border-color: var(--inactive-border-color);
+}
+
+/* For additional toolbar properties */
+.props {
+	visibility: hidden;
+}
+
+/* only show for props that are checked */
+:checked ~ .props {
+	visibility: visible;
+}
+
+/* for opened property detail */
+:checked ~ .props[open] ~ label > .icon {
+	border-radius: var(--icon-open-curves);
+	border-width: var(--icon-open-borders);
+}
+
+/* Make height of more icon & hide triangle. */
+.props > summary {
+	line-height: var(--more);
+	list-style: none; /* Don't show arrow. */
+}
+
+.props[open] .icon {
+	background-color: var(--active-color);
+	border-color: var(--active-border-color);
+}
+
+.props[open] > ul {
+	background-color: var(--alert-color);
+	border: var(--border) solid var(--alert-border-color);
+	border-radius: var(--alert-curves);
+	padding-top: 1rem;
+	padding-bottom: 1rem;
+	
+	/* 
+	TODO: If want centered, for reference. 
+	From https://www.w3.org/Style/Examples/007/center.en.html 
+	left: 50%;
+	margin: 0 -50% 0 0;
+	position: absolute;
+	transform: translate(-50%, 0); */
+	
+	/* Relative to heading */
+	position: absolute;
+	left: var(--border);
+	right: var(--border);
+}
+
+/* Tools to write on drawing pad */
+.toolbar {
+	align-items: start; /* so if props missing then still aligned */
+	display: flex;
+	margin: 0 var(--curve) 0 var(--curve);
+	overflow-x: auto;
+	padding: 0;
+	scrollbar-width: none;
+}
+
+/* Fix until most browsers support scrollbar-width */
+.toolbar::-webkit-scrollbar {
+	display: none;
+}
+
+/* Display toolbar items parts in a line too. */
+.toolbar > li {
+	display: flex;
+	flex-direction: column-reverse; /* for space for details icon underneath */
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+/* For main layout, both are flex to account for margins. */
+body, html {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+/* Toolbar goes in here. */
+header {
+	/* For showing prop popup beneath header (over main) */
+	position: relative;
+}
+
+/* For toolbar, use label and css to show instead */
+input[name='tool'] {
+	display: none;
+}
+
+/* For toolbar. */
+label, summary {
+	cursor: pointer;
+}
+
+/* Drawing pad goes in here. */
+main {
+    border: var(--border) solid currentColor;
+    border-radius: var(--curve);
+	flex: 1; /* Take up as much space as possible. */
+}
+
