@@ -126,6 +126,11 @@
 	list-style: none; /* Don't show arrow. */
 }
 
+/* For browsers that don't support list-style (ios Safari */
+.props > summary::marker {
+    display: none;
+}
+
 .props[open] .icon {
 	background-color: var(--active-color);
 	border-color: var(--active-border-color);
