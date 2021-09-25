@@ -126,8 +126,8 @@
 	list-style: none; /* Don't show arrow. */
 }
 
-/* For browsers that don't support list-style (ios Safari */
-.props > summary::marker {
+/* For browsers that don't support list-style (ios Safari, android chrome) */
+.props > summary::marker, .props > summary::-webkit-details-marker {
     display: none;
 }
 
