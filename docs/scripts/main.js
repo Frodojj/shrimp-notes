@@ -46,8 +46,8 @@ class DrawingApp {
 	 * 
 	 * @param container The HTML Element to put SVG node.
 	 */
-	constructor(container) {
-		this.factory = SVG().addTo(container).size("100%", "100%");
+	constructor(factory) {
+		this.factory = factory;
 		this.tool = null;
 		Dispatcher.bind(this.factory.node, new PointerTool());
 	}
@@ -86,8 +86,8 @@ class DrawingApp {
 /** Sets up app with the HTML document. */
 window.addEventListener("load", function(e) {
 	const defaults = DrawingApp.DEFAULTPATH;
-	const drawingNode = document.querySelector("main");
-	const drawingApp = new DrawingApp(drawingNode);
+	const drawingNode = document.querySelector("main svg");
+	const drawingApp = new DrawingApp(SVG(drawingNode));
 	const paths = new Map();
 	const widths = [1, 2, 3, 5, 10, 20];
 	
