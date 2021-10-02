@@ -206,12 +206,11 @@ label, summary {
 
 /* Drawing pad goes in here. */
 main {
-	border: var(--border) solid currentColor;
-	border-radius: var(--curve);
+    border: var(--border) solid currentColor;
+    border-radius: var(--curve);
 	flex: 1; /* Take up as much space as possible. */
 }
 
-/* iOS Safari bug test */
 main svg {
 	background: var(--hover-color) !important;
 }
