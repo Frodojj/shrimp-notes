@@ -211,7 +211,7 @@ main {
 	flex: 1; /* Take up as much space as possible. */
 }
 
-/* iOS Safari bug workaround */
-main svg {
-	cursor: pointer;
+/* iOS Safari bug test */
+main svg path {
+	fill: var(--hover-color) !important;
 }
