@@ -212,6 +212,6 @@ main {
 }
 
 /* iOS Safari bug test */
-main svg path {
-	fill: var(--hover-color) !important;
+main svg {
+	background: var(--hover-color) !important;
 }
