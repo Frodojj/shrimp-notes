@@ -1,73 +1,97 @@
 /*
- Jimmy Cerra
- 25 Sept. 2021
- MIT License
- 
- Copyright 2021 James Francis Cerra
- 
- Permission is hereby granted, free of charge, to any person obtaining a copy of
- this software and associated documentation files (the "Software"), to deal in
- the Software without restriction, including without limitation the rights to
- use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
- of the Software, and to permit persons to whom the Software is furnished to do
- so, subject to the following conditions:
- 
- The above copyright notice and this permission notice shall be included in all
- copies or substantial portions of the Software.
- 
- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- SOFTWARE.
+ * Jimmy Cerra
+ * 1 Oct. 2021
+ * MIT License
+ * 
+ * Copyright 2021 James Francis Cerra
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to
+ * deal in the Software without restriction, including without limitation the
+ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+ * sell copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
  */
 
-class Drawing {
-	static defaultPath = {
+
+/** Sample app that uses drawing.js classes. */
+class DrawingApp {
+	/** Default SVG attributes of path element drawn. */
+	static DEFAULTPATH = {
 		"fill": "none",
 		"stroke": "currentColor",
 		"stroke-width": "2",
 		"stroke-linecap": "round"
+	};
+	
+	/** Makes SVG elements from SVG.js. */
+	factory;
+	
+	/** Drawing Tool being used. */
+	tool;
+	
+	/**
+	 * Makes the app.
+	 * 
+	 * @param container The HTML Element to put SVG node.
+	 */
+	constructor(container) {
+		this.factory = SVG().addTo(container).size("100%", "100%");
+		this.tool = null;
+		Dispatcher.bind(this.factory.node, new PointerTool());
 	}
 	
-	#factory; // Makes svg elements from SVG.js
-	#node; // The actual svg element on the page.
-	#listener; // The tool being used.
-	
-	// Root is HTML Element to put SVG node.
-	constructor(root) {
-		this.#factory = SVG().addTo(root).size("100%", "100%");
-		this.#node = this.#factory.node; // SVG node, not HTML Element root.
-		this.#listener = null;
+	/**
+	 * Sets DrawingTool to draw with a path element (basically a curvy line).
+	 *
+	 * @param attr SVG attributes for path element. Default is DEFAULTPATH.
+	 */
+	addPath(attr = DrawingApp.DEFAULTPATH) {
+		this.addTool(new PathDrawer(this.factory, attr));
 	}
 	
-	addPath(attr = Drawing.defaultPath) {
+	/** Sets the DrawingTool to use. */
+	addTool(tool) {
 		this.removeTool();
-		let tool = new PathDrawer(this.#factory, attr);
-		this.#listener = tool.listenTo(this.#node);
+		this.tool = tool;
+		Dispatcher.bind(this.factory.node, tool);
 	}
 	
+	/** Sets DrawingTool to erase element under it. */
 	removeShape() {
-		this.removeTool();
-		let tool = new ElementRemover(this.#node);
-		this.#listener = tool.listenTo(this.#node);
+		this.addTool(new ElementRemover(this.factory.node));
 	}
-
+	
+	/** Unsets the DrawingTool being used. */
 	removeTool() {
-		if(this.#listener)
-			DrawingTool.unbind(this.#node, this.#listener);
-		this.#listener = null;
+		if(this.tool) {
+			Dispatcher.unbind(this.factory.node, this.tool);
+		}
+		this.tool = null;
 	}
 };
 
+
+/** Sets up app with the HTML document. */
 window.addEventListener("load", function(e) {
+	const defaults = DrawingApp.DEFAULTPATH;
 	const drawingNode = document.querySelector("main");
-	const drawing = new Drawing(drawingNode);
+	const drawingApp = new DrawingApp(drawingNode);
 	const paths = new Map();
 	const widths = [1, 2, 3, 5, 10, 20];
 	
+	// Helper to add an EventListener to nodes by selector.
 	const addListener = function(selector, listener, events = ["input"]) {
 		const nodes = document.querySelectorAll(selector);
 		for(let n of nodes) {
@@ -77,6 +101,7 @@ window.addEventListener("load", function(e) {
 		}
 	};
 	
+	// EventListener that changes tool color.
 	const colorFn = e => {
 		let value = e.target.value;
 		let name = e.target.dataset.tool;
@@ -85,7 +110,7 @@ window.addEventListener("load", function(e) {
 			tool["stroke"] = value;
 		}
 		else {
-			const tool = { ...Drawing.defaultPath, "stroke": value };
+			const tool = { ...defaults, "stroke": value };
 			paths.set(name, tool);
 		}
 		// Set icon color
@@ -93,25 +118,27 @@ window.addEventListener("load", function(e) {
 		icon.setAttribute("color", value);
 	};
 	
+	// EventListener that changes tool being used.
 	const toolFn = e => {
 		let value = e.target.value;
 		let name = e.target.dataset.tool;
 		
 		if(! name) {
 			// if no name
-			drawing[e.target.value]();
+			drawingApp[e.target.value]();
 		}
 		else if(paths.has(name)) {
 			const tool = paths.get(name);
-			drawing[e.target.value](tool);
+			drawingApp[e.target.value](tool);
 		}
 		else {
-			const tool = { ...Drawing.defaultPath};
+			const tool = { ...defaults};
 			paths.set(name, tool);
-			drawing[e.target.value](tool);
+			drawingApp[e.target.value](tool);
 		}
 	};
 	
+	// EventListener that changes tool width.
 	const widthFn = e => {
 		let value = widths[e.target.value];
 		let name = e.target.dataset.tool;
@@ -120,11 +147,12 @@ window.addEventListener("load", function(e) {
 			tool["stroke-width"] = value;
 		}
 		else {
-			const tool = { ...Drawing.defaultPath, "stroke-width": value };
+			const tool = { ...defaults, "stroke-width": value };
 			paths.set(name, tool);
 		}
 	};
 	
+	// Add EventListeners for toolbar.
 	addListener("input[name='strokeColor']", colorFn, ["click", "input"]);
 	addListener("input[name='tool']", toolFn);
 	addListener("input[name='strokeWidth']", widthFn);
