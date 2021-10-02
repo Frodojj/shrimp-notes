@@ -36,7 +36,7 @@ class DrawingApp {
 	};
 	
 	/** Makes SVG elements from SVG.js. */
-	factory;
+	node;
 	
 	/** Drawing Tool being used. */
 	tool;
@@ -44,39 +44,40 @@ class DrawingApp {
 	/**
 	 * Makes the app.
 	 * 
-	 * @param container The HTML Element to put SVG node.
+	 * @param node The SVG Element.
 	 */
-	constructor(factory) {
-		this.factory = factory;
+	constructor(node) {
+		this.node = node;
 		this.tool = null;
-		Dispatcher.bind(this.factory.node, new PointerTool());
+		Dispatcher.bind(this.node, new PointerTool());
 	}
 	
 	/**
 	 * Sets DrawingTool to draw with a path element (basically a curvy line).
 	 *
+	 * @param svg SVG factory for making svg elements.
 	 * @param attr SVG attributes for path element. Default is DEFAULTPATH.
 	 */
-	addPath(attr = DrawingApp.DEFAULTPATH) {
-		this.addTool(new PathDrawer(this.factory, attr));
+	addPath(svg, attr = DrawingApp.DEFAULTPATH) {
+		this.addTool(new PathDrawer(svg, attr));
 	}
 	
 	/** Sets the DrawingTool to use. */
 	addTool(tool) {
 		this.removeTool();
 		this.tool = tool;
-		Dispatcher.bind(this.factory.node, tool);
+		Dispatcher.bind(this.node, tool);
 	}
 	
 	/** Sets DrawingTool to erase element under it. */
 	removeShape() {
-		this.addTool(new ElementRemover(this.factory.node));
+		this.addTool(new ElementRemover(this.node));
 	}
 	
 	/** Unsets the DrawingTool being used. */
 	removeTool() {
 		if(this.tool) {
-			Dispatcher.unbind(this.factory.node, this.tool);
+			Dispatcher.unbind(this.node, this.tool);
 		}
 		this.tool = null;
 	}
@@ -87,8 +88,10 @@ class DrawingApp {
 window.addEventListener("load", function(e) {
 	const defaults = DrawingApp.DEFAULTPATH;
 	const drawingNode = document.querySelector("main svg");
-	const drawingApp = new DrawingApp(SVG(drawingNode));
+	const drawingApp = new DrawingApp(drawingNode);
 	const paths = new Map();
+	const svg = SVG(drawingNode);
+	
 	const widths = [1, 2, 3, 5, 10, 20];
 	
 	// Helper to add an EventListener to nodes by selector.
@@ -129,12 +132,12 @@ window.addEventListener("load", function(e) {
 		}
 		else if(paths.has(name)) {
 			const tool = paths.get(name);
-			drawingApp[e.target.value](tool);
+			drawingApp[e.target.value](svg, tool);
 		}
 		else {
 			const tool = { ...defaults};
 			paths.set(name, tool);
-			drawingApp[e.target.value](tool);
+			drawingApp[e.target.value](svg, tool);
 		}
 	};
 	
