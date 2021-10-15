@@ -4,9 +4,10 @@ Hello, world! This is going to be a note taking app. The initial purpose is to
 help with note taking during my jiu-jitsu classes and math classes. Currently
 uses svg.js to help manage making svg elements, but this can be factored out
 easily. Also uses svg.panzoom.js for zooming, but again this can be factored
-out. The main classes are currently in drawing.js
+out. The most important classes are currently in drawing.js The file main.js
+an example app using it.
 
-The class structure is a follows:
+The class structure of drawing.js is as follows:
 
 - ViewBox
     - static alignDimensions(node): \[width, height]
