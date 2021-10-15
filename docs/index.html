@@ -6,7 +6,7 @@
 	
 	<!--
 	 Jimmy Cerra
-	 25 Sept. 2021
+	 12 Oct. 2021
 	 MIT License
 	 
 	 Copyright 2021 James Francis Cerra
@@ -33,9 +33,11 @@
 	<title>Shrimp Notes</title>
 	
 	<link rel="manifest" href="app.webmanifest">
+	<link rel="stylesheet" href="stylesheets/toolbar.css">
 	<link rel="stylesheet" href="stylesheets/main.css">
 	
 	<script defer src="scripts/svg.js"></script>
+	<script defer src="scripts/svg.panzoom.js"></script>
 	<script defer src="scripts/drawing.js"></script>
 	<script defer src="scripts/main.js"></script>
 </head>
@@ -74,113 +76,64 @@
 		</symbol>
 	</defs>
 </svg>
-<header>
-	<form autocomplete="off">
-		<ul class="toolbar">
-			<li>
-				<label>
-					<input name="tool" type="radio" value="removeTool" checked>
-					<svg class="icon"><use href="#hand" /></svg>
-				</label>
-			<li>
-				<label>
-					<input name="tool" type="radio" value="removeShape">
-					<svg class="icon"><use href="#eraser" /></svg>
-				</label>
-
-			<li>			
-				<input id="pen1" name="tool" type="radio" value="addPath"
-					data-tool="pen1">
-				<details class="props">
-					<summary>
-						<svg class="more icon"><use href="#more" /></svg>
-					</summary>
-					<ul>
-						<li>
-							<label>Tool size: 
-								<input name="strokeWidth" data-tool="pen1"
-									type="range" min="0" max="5" value="1">
-							</label>
-						<li>
-							<label>Tool color:
-								<input name="strokeColor"  data-tool="pen1"
-									type="color" value="#000000">
-							</label>
-					</ul>
-				</details>
-				<label for="pen1">
-					<svg class="icon"><use href="#pen" /></svg>
-				</label>
-			<li>
-				<input id="pen2" name="tool" type="radio" value="addPath"
-					data-tool="pen2">
-				<details class="props">
-					<summary>
-						<svg class="more icon"><use href="#more" /></svg>
-					</summary>
-					<ul>
-						<li>
-							<label>Tool size: 
-								<input name="strokeWidth" data-tool="pen2"
-									type="range" min="0" max="5" value="1">
-							</label>
-						<li>
-							<label>Tool color:
-								<input name="strokeColor"  data-tool="pen2"
-									type="color" value="#000000">
-							</label>
-					</ul>
-				</details>
-				<label for="pen2">
-					<svg class="icon"><use href="#pen" /></svg>
-				</label>
-			<li>
-				<input id="pen3" name="tool" type="radio" value="addPath"
-					data-tool="pen3">
-				<details class="props">
-					<summary>
-						<svg class="more icon"><use href="#more" /></svg>
-					</summary>
-					<ul>
-						<li>
-							<label>Tool size: 
-								<input name="strokeWidth" data-tool="pen3"
-									type="range" min="0" max="5" value="1">
-							</label>
-						<li>
-							<label>Tool color:
-								<input name="strokeColor"  data-tool="pen3"
-									type="color" value="#000000">
-							</label>
-					</ul>
-				</details>
-				<label for="pen3">
-					<svg class="icon"><use href="#pen" /></svg>
-				</label>
-			<li>
-				<input id="pen4" name="tool" type="radio" value="addPath"
-					data-tool="pen4">
-				<details class="props">
-					<summary>
-						<svg class="more icon"><use href="#more" /></svg>
-					</summary>
-					<ul>
-						<li>
-							<label>Tool size: 
-								<input name="strokeWidth" data-tool="pen4"
-									type="range" min="0" max="5" value="1">
-							</label>
-						<li>
-							<label>Tool color:
-								<input name="strokeColor"  data-tool="pen4"
-									type="color" value="#000000">
-							</label>
-					</ul>
-				</details>
-				<label for="pen4">
-					<svg class="icon"><use href="#pen" /></svg>
-				</label>
-		</ul>
-	</form>
+<header class="toolbar">
+	<ul>
+		<li>
+			<input id="panZoom" name="tool" type="radio" value="panZoom" checked>
+			<details>
+				<summary><svg class="more icon"><use href="#more" /></svg></summary>
+				<ul>
+					<li><label>Width: <input name="viewBoxWidth" type="number" inputmode="decimal" min="1" max="2200"></label>
+					<li><label>Height: <input name="viewBoxHeight" type="number" inputmode="decimal" min="0" max="2200"></label>
+				</ul>
+			</details>
+			<label for="panZoom"><svg class="icon"><use href="#hand" /></svg></label>
+		<li>
+			<label><input name="tool" type="radio" value="removeShape"><svg class="icon"><use href="#eraser" /></svg></label>
+		<li>			
+			<input id="pen1" name="tool" type="radio" value="addPath" data-tool="pen1">
+			<details>
+				<summary><svg class="more icon"><use href="#more" /></svg></summary>
+				<ul>
+					<li><label>Tool size: <input name="strokeWidth" data-tool="pen1" type="range" min="0" max="5" value="1"></label>
+					<li><label>Tool color: <input name="strokeColor" data-tool="pen1" type="color" value="#000000"></label>
+				</ul>
+			</details>
+			<label for="pen1"><svg class="icon"><use href="#pen" /></svg></label>
+		<li>
+			<input id="pen2" name="tool" type="radio" value="addPath" data-tool="pen2">
+			<details>
+				<summary><svg class="more icon"><use href="#more" /></svg></summary>
+				<ul>
+					<li><label>Tool size: <input name="strokeWidth" data-tool="pen2" type="range" min="0" max="5" value="1"></label>
+					<li><label>Tool color: <input name="strokeColor" data-tool="pen2" type="color" value="#000000"></label>
+				</ul>
+			</details>
+			<label for="pen2"><svg class="icon"><use href="#pen" /></svg></label>
+		<li>
+			<input id="pen3" name="tool" type="radio" value="addPath" data-tool="pen3">
+			<details>
+				<summary><svg class="more icon"><use href="#more" /></svg></summary>
+				<ul>
+					<li><label>Tool size: <input name="strokeWidth" data-tool="pen3" type="range" min="0" max="5" value="1"></label>
+					<li><label>Tool color: <input name="strokeColor" data-tool="pen3" type="color" value="#000000"></label>
+				</ul>
+			</details>
+			<label for="pen3"><svg class="icon"><use href="#pen" /></svg></label>
+		<li>
+			<input id="pen4" name="tool" type="radio" value="addPath" data-tool="pen4">
+			<details>
+				<summary><svg class="more icon"><use href="#more" /></svg></summary>
+				<ul>
+					<li><label>Tool size: <input name="strokeWidth" data-tool="pen4" type="range" min="0" max="5" value="1"></label>
+					<li><label>Tool color: <input name="strokeColor" data-tool="pen4" type="color" value="#000000"></label>
+				</ul>
+			</details>
+			<label for="pen4"><svg class="icon"><use href="#pen" /></svg></label>
+	</ul>
 </header>
-<main><svg width="100%" height="100%"></svg></main>
+<main>
+	<!-- 8.5" x 11" with 1" margins @ 96 dpi = 0 0 624 864 -->
+	<!-- 8.5" x 11" with .4" margins @ 96 dpi = 0 0 739.2 979.2 -->
+	<svg preserveAspectRatio="xMinYMin meet"></svg>
+</main>

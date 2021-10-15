@@ -1,6 +1,6 @@
 /*
  * Jimmy Cerra
- * 1 Oct. 2021
+ * 13 Oct. 2021
  * MIT License
  * 
  * Copyright 2021 James Francis Cerra
@@ -25,7 +25,9 @@
  */
 
 
-/** Sample app that uses drawing.js classes. */
+/**
+ * Sample app that uses drawing.js classes. Controls which events are attached
+ * to the svg node. */
 class DrawingApp {
 	/** Default SVG attributes of path element drawn. */
 	static DEFAULTPATH = {
@@ -35,11 +37,9 @@ class DrawingApp {
 		"stroke-linecap": "round"
 	};
 	
-	/** Makes SVG elements from SVG.js. */
-	node;
-	
-	/** Drawing Tool being used. */
-	tool;
+	node; // SVG element to draw on.
+	svg; // Factory that makes SVG elements from SVG.js.
+	tool; // Drawing Tool being used.
 	
 	/**
 	 * Makes the app.
@@ -48,6 +48,8 @@ class DrawingApp {
 	 */
 	constructor(node) {
 		this.node = node;
+		this.svg = SVG(node);
+		this.svg.panZoom();
 		this.tool = null;
 		Dispatcher.bind(this.node, new PointerTool());
 	}
@@ -55,11 +57,10 @@ class DrawingApp {
 	/**
 	 * Sets DrawingTool to draw with a path element (basically a curvy line).
 	 *
-	 * @param svg SVG factory for making svg elements.
 	 * @param attr SVG attributes for path element. Default is DEFAULTPATH.
 	 */
-	addPath(svg, attr = DrawingApp.DEFAULTPATH) {
-		this.addTool(new PathDrawer(svg, attr));
+	addPath(attr = DrawingApp.DEFAULTPATH) {
+		this.addTool(new PathDrawer(this.svg, attr));
 	}
 	
 	/** Sets the DrawingTool to use. */
@@ -67,6 +68,10 @@ class DrawingApp {
 		this.removeTool();
 		this.tool = tool;
 		Dispatcher.bind(this.node, tool);
+	}
+	
+	panZoom() {
+		this.removeTool();
 	}
 	
 	/** Sets DrawingTool to erase element under it. */
@@ -78,8 +83,8 @@ class DrawingApp {
 	removeTool() {
 		if(this.tool) {
 			Dispatcher.unbind(this.node, this.tool);
+			this.tool = null;
 		}
-		this.tool = null;
 	}
 };
 
@@ -88,10 +93,9 @@ class DrawingApp {
 window.addEventListener("load", function(e) {
 	const defaults = DrawingApp.DEFAULTPATH;
 	const drawingNode = document.querySelector("main svg");
+	ViewBox.validate(drawingNode);
 	const drawingApp = new DrawingApp(drawingNode);
 	const paths = new Map();
-	const svg = SVG(drawingNode);
-	
 	const widths = [1, 2, 3, 5, 10, 20];
 	
 	// Helper to add an EventListener to nodes by selector.
@@ -132,12 +136,12 @@ window.addEventListener("load", function(e) {
 		}
 		else if(paths.has(name)) {
 			const tool = paths.get(name);
-			drawingApp[e.target.value](svg, tool);
+			drawingApp[e.target.value](tool);
 		}
 		else {
 			const tool = { ...defaults};
 			paths.set(name, tool);
-			drawingApp[e.target.value](svg, tool);
+			drawingApp[e.target.value](tool);
 		}
 	};
 	
