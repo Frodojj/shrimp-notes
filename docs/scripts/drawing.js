@@ -33,14 +33,14 @@ class ViewBox {
 	 * 3. or if falsy then the default dimensions 300x150.
 	 * 
 	 * @param node The SVG node (SVGSVGElement).
-	 * @return {width, height} Valid viewBox dimensions.
+	 * @return [width, height] Valid viewBox dimensions.
 	 */
 	static alignDimensions(node) {
 		const bBox = node.getBBox?.() ?? {}; // Content size.
 		const rect = node.getBoundingClientRect?.() ?? {}; // Element size.
-		const w = bBox?.width || rect?.width || 300;
-		const h = bBox?.height || rect?.height || 150;
-		return {width: w, height: h};
+		const width = bBox?.width || rect?.width || 300;
+		const height = bBox?.height || rect?.height || 150;
+		return [width, height];
 	}
 	
 	/**
@@ -167,7 +167,7 @@ class ViewBox {
 		
 		// Make sure dimensions are valid.
 		if(width <= 0 || height <= 0) {
-			const {width:w, height:h} = ViewBox.alignDimensions(node);
+			const [w, h] = ViewBox.alignDimensions(node);
 			const attr = `${x} ${y} ${w} ${h}`;
 			node.setAttribute("viewBox", attr);
 		}
@@ -266,23 +266,6 @@ class PointerTool extends Dispatcher {
 		}
 	}
 	
-	/** Dispatches drawing "end" state if pointer is doing something. */
-	dispatchEnd(e) {
-		if(this.pointerState) {
-			const ev = DrawingTool.event(DrawingTool.END, e, this.downPoint);
-			e.currentTarget.dispatchEvent(ev);
-		}
-	}
-	
-	/** Dispatches drawing "drawing" state if pointer is doing something. */
-	dispatchDrawing(e) {
-		if(this.pointerState) {
-			const ev = DrawingTool.event(
-				DrawingTool.DRAWING, e, this.downPoint);
-			e.currentTarget.dispatchEvent(ev);
-		}
-	}
-	
 	/**
 	 * Sets state to INIT and records the point where pointer was down if
 	 * is primary pointer. Otherwise, resets state to NONE.
@@ -307,7 +290,9 @@ class PointerTool extends Dispatcher {
 		if(this.pointerState && e.isPrimary) {
 			e.preventDefault();
 			this.pointerState = PointerTool.MOVING;
-			this.dispatchDrawing(e);
+			const ev = DrawingTool.event(
+				DrawingTool.DRAWING, e, this.downPoint);
+			e.currentTarget.dispatchEvent(ev);
 		}
 	}
 	
@@ -315,7 +300,8 @@ class PointerTool extends Dispatcher {
 	pointerup(e) {
 		if(this.pointerState && e.isPrimary) {
 			e.preventDefault();
-			this.dispatchEnd(e);
+			const ev = DrawingTool.event(DrawingTool.END, e, this.downPoint);
+			e.currentTarget.dispatchEvent(ev);
 			this.pointerState = PointerTool.NONE;
 		}
 	}
@@ -380,7 +366,7 @@ class PathDrawer extends DrawingTool {
 	/** Adds/draws points for the middle of a path. */
 	drawing(e) {
 		if(! this?.path) {
-			this.drawingstart(this.getPosition(e.init, e.rect));
+			this.drawingStart(this.getPosition(e.init, e.rect));
 		}
 		
 		const [x, y] = this.getPosition(e.point, e.rect);
@@ -399,7 +385,7 @@ class PathDrawer extends DrawingTool {
 	/** Resets state for making a path. */
 	drawingend(e) {
 		if(! this?.path) {
-			this.drawingstart(this.getPosition(e.point, e.rect));
+			this.drawingStart(this.getPosition(e.point, e.rect));
 		}
 		
 		// remove reference to old path
@@ -407,7 +393,7 @@ class PathDrawer extends DrawingTool {
 	}
 	
 	/** Creates the path node at the initial point. */
-	drawingstart([x, y]) {	
+	drawingStart([x, y]) {	
 		// Initial point, and a 0 length line to display point, in SVG syntax
 		const initPoint = "M " + x + " " + y + " l 0 0";
 	
