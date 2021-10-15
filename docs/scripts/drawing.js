@@ -339,7 +339,8 @@ class ElementRemover extends DrawingTool {
 	
 	/** Removes an element under the mouse if it's removable. */
 	drawing(e) {
-		const el = document.elementFromPoint(e.x, e.y);
+		const [x, y] = e.point;
+		const el = document.elementFromPoint(x, y);
 		if(this.isRemovable(el)) {
 			el.remove();
 		}
