@@ -1,27 +1,7 @@
 /*
  * Jimmy Cerra
- * 13 Oct. 2021
+ * 16 Oct. 2021
  * MIT License
- * 
- * Copyright 2021 James Francis Cerra
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to
- * deal in the Software without restriction, including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
- * sell copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
- * IN THE SOFTWARE.
  */
 
 
@@ -30,68 +10,84 @@
  * to the svg node. */
 class DrawingApp {
 	/** Default SVG attributes of path element drawn. */
-	static DEFAULTPATH = {
+	static PATH = {
 		"fill": "none",
 		"stroke": "currentColor",
-		"stroke-width": "2",
-		"stroke-linecap": "round"
+		"stroke-linecap": "round",
+		"stroke-width": "2"
+
+	};
+	
+	static TOOL_ZOOM = {
+		oneFingerPan: false, // Use two fingers instead.
+		panButton: 1, // mouse middle-click.
+		zoomMax: 8,
+		zoomMin: 1/16
+	};
+	
+	static VIEW_ZOOM = {
+		...DrawingApp.TOOL_ZOOM,
+		oneFingerPan: true, // Use one finger.
+		panButton: 0 // mouse left-lick. 
 	};
 	
 	node; // SVG element to draw on.
 	svg; // Factory that makes SVG elements from SVG.js.
 	tool; // Drawing Tool being used.
 	
-	/**
-	 * Makes the app.
-	 * 
-	 * @param node The SVG Element.
-	 */
+	/** The node is the SVG Element. */
 	constructor(node) {
 		this.node = node;
 		this.svg = SVG(node);
-		this.svg.panZoom();
+		this.svg.panZoom(DrawingApp.VIEW_ZOOM);
 		this.tool = null;
-		Dispatcher.bind(this.node, new PointerTool());
+		const pointerTool = new PointerTool();
+		for (const listener of pointerTool.listeners) {
+			this.node.addEventListener(...listener);
+		};
 	}
 	
-	/**
-	 * Sets DrawingTool to draw with a path element (basically a curvy line).
-	 *
-	 * @param attr SVG attributes for path element. Default is DEFAULTPATH.
-	 */
-	addPath(attr = DrawingApp.DEFAULTPATH) {
+	/** Sets tool to draw with a SVG path element. */
+	addPath(attr = DrawingApp.PATH) {
 		this.addTool(new PathDrawer(this.svg, attr));
 	}
 	
 	/** Sets the DrawingTool to use. */
 	addTool(tool) {
 		this.removeTool();
+		this.svg.panZoom(DrawingApp.TOOL_ZOOM);
 		this.tool = tool;
-		Dispatcher.bind(this.node, tool);
+		for (const listener of this.tool.listeners) {
+			this.node.addEventListener(...listener);
+		};
 	}
 	
+	/** Sets zoom attributes to VIEW_ZOOM */
 	panZoom() {
 		this.removeTool();
+		this.svg.panZoom(DrawingApp.VIEW_ZOOM);
 	}
 	
-	/** Sets DrawingTool to erase element under it. */
+	/** Sets tool to remove element under it. */
 	removeShape() {
-		this.addTool(new ElementRemover(this.node));
+		this.addTool(new ElementRemover());
 	}
 	
 	/** Unsets the DrawingTool being used. */
 	removeTool() {
-		if(this.tool) {
-			Dispatcher.unbind(this.node, this.tool);
+		if (this.tool) {
+			for (const listener of this.tool.listeners) {
+				this.node.removeEventListener(...listener);
+			}
 			this.tool = null;
 		}
 	}
-};
+}
 
 
 /** Sets up app with the HTML document. */
 window.addEventListener("load", function(e) {
-	const defaults = DrawingApp.DEFAULTPATH;
+	const defaults = DrawingApp.PATH;
 	const drawingNode = document.querySelector("main svg");
 	ViewBox.validate(drawingNode);
 	const drawingApp = new DrawingApp(drawingNode);
@@ -101,8 +97,8 @@ window.addEventListener("load", function(e) {
 	// Helper to add an EventListener to nodes by selector.
 	const addListener = function(selector, listener, events = ["input"]) {
 		const nodes = document.querySelectorAll(selector);
-		for(let n of nodes) {
-			for(let e of events) {
+		for (const n of nodes) {
+			for (const e of events) {
 				n.addEventListener(e, listener, false);
 			}
 		}
@@ -112,7 +108,7 @@ window.addEventListener("load", function(e) {
 	const colorFn = e => {
 		let value = e.target.value;
 		let name = e.target.dataset.tool;
-		if(paths.has(name)) {
+		if (paths.has(name)) {
 			const tool = paths.get(name);
 			tool["stroke"] = value;
 		}
@@ -130,11 +126,11 @@ window.addEventListener("load", function(e) {
 		let value = e.target.value;
 		let name = e.target.dataset.tool;
 		
-		if(! name) {
+		if (!name) {
 			// if no name
 			drawingApp[e.target.value]();
 		}
-		else if(paths.has(name)) {
+		else if (paths.has(name)) {
 			const tool = paths.get(name);
 			drawingApp[e.target.value](tool);
 		}
@@ -149,7 +145,7 @@ window.addEventListener("load", function(e) {
 	const widthFn = e => {
 		let value = widths[e.target.value];
 		let name = e.target.dataset.tool;
-		if(paths.has(name)) {
+		if (paths.has(name)) {
 			const tool = paths.get(name);
 			tool["stroke-width"] = value;
 		}

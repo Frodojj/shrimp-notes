@@ -1,6 +1,6 @@
 /*
  * Jimmy Cerra
- * 12 Oct. 2021
+ * 15 Oct. 2021
  * MIT License
  * 
  * Copyright 2021 James Francis Cerra
@@ -62,17 +62,6 @@ main {
 	display: flex;
 	flex-direction: column;
 	height: 100%;
-}
-
-/* For toolbar, use label and css to show instead */
-input[name='tool'] {
-	display: none;
-}
-
-/* For toolbar. */
-label,
-summary {
-	cursor: pointer;
 }
 
 /* Drawing pad goes in here. */
