@@ -87,7 +87,7 @@ The class structure of drawing.js is as follows:
 	- \[DrawingTool.DRAW](e)
 		- Erases element by calling DrawingTool.removeChildFromPoint(e).
 	
-	- \[DrawingTool.END](e) {
+	- \[DrawingTool.END](e)
 		- Erases element by calling DrawingTool.removeChildFromPoint(e).
 
 - PathDrawer extends DrawingTool
