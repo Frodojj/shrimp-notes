@@ -66,7 +66,7 @@ The class structure of drawing.js is as follows:
 		- Array of event handler names to register.
 	- static OPTIONS
 		- Options object for the event handlers.
-	- static VALID_BUTTONS = 33
+	- static VALID_BUTTONS
 		- Mask for MouseEvent.Buttons that represents a touch, left-click, 
 		  pen-tip or pen-eraser button.
 	- pointer
