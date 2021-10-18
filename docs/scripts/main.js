@@ -99,7 +99,7 @@ class DrawingApp {
 }
 
 
-/** Takes care of attributes object for app. */
+/** Takes care of attributes object state for app. */
 class DrawingAttributes {
 	attrsMap = new Map();          // Map of names with path attributes.
 	defaultPath = DrawingApp.PATH; // Default path copied.
@@ -151,7 +151,7 @@ class DrawingAttributes {
 
 
 /** Sets up app with the HTML document. */
-window.addEventListener("load", function(e) {
+window.addEventListener("load", function(ev) {
 	const node = document.querySelector("main svg");
 	const app = new DrawingApp(node);
 	const state = new DrawingAttributes();

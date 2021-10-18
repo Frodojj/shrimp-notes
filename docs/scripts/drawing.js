@@ -144,14 +144,11 @@ SVG.DrawingTool = class {
 	 */
 	static makeEvent(name, e, buttons, [x, y]) {
 		const currentTarget = e.currentTarget; // Attached node.
-		const eraserMask = 32; // From MouseDown.buttons
-		const primaryMask = 1; // From MouseDown.buttons
 		return new CustomEvent(name, {
 			detail: {
-				init: [x, y],
-				isPrimaryButton: buttons & primaryMask,
-				isEraserButton: buttons & eraserMask,
+				buttons: buttons,
 				currentTarget: currentTarget,
+				init: [x, y],
 				point: [e.clientX, e.clientY],
 				rect: currentTarget.getBoundingClientRect()
 			}
@@ -252,6 +249,15 @@ SVG.DrawingTool = class {
 			}
 		}
 		
+		dispatchEvent(ev) {
+			if(this.pointer.buttons & 32) { // eraser button
+				SVG.DrawingTool.removeChildFromPoint(ev.detail);
+			} else { // not eraser button
+				const node = ev.detail.currentTarget;
+				node.dispatchEvent(ev);
+			}
+		}
+		
 		/** If valid buttons: If primary then sets init else resets state. */
 		pointerdown(e) {
 			// If buttons is not supported (undefined or 0), set it to bitmask
@@ -276,7 +282,7 @@ SVG.DrawingTool = class {
 			if (this.pointer.state && e.isPrimary) {
 				this.pointer.moving();
 				const ev = SVG.DrawingTool.drawEvent(e, this.pointer);
-				e.currentTarget.dispatchEvent(ev);
+				this.dispatchEvent(ev);
 			}
 		}
 
@@ -284,7 +290,7 @@ SVG.DrawingTool = class {
 		pointerup(e) {
 			if (this.pointer.state && e.isPrimary) {
 				const ev = SVG.DrawingTool.endEvent(e, this.pointer);
-				e.currentTarget.dispatchEvent(ev);
+				this.dispatchEvent(ev);
 				this.pointer.reset();
 			}
 		}
@@ -324,12 +330,7 @@ SVG.DrawingTool = class {
 		}
 
 		/** Adds/draws points for the middle of a path. */
-		[SVG.DrawingTool.DRAW](e) {
-			if (e.isEraserButton) {
-				SVG.DrawingTool.removeChildFromPoint(e);
-				return;
-			}
-			
+		[SVG.DrawingTool.DRAW](e) {		
 			if (!this?.path) {
 				this.drawingStart(this.getPosition(e.init, e.rect));
 			}
@@ -349,12 +350,8 @@ SVG.DrawingTool = class {
 
 		/** Resets state for making a path. */
 		[SVG.DrawingTool.END](e) {
-			if (e.isEraserButton) {
-				SVG.DrawingTool.removeChildFromPoint(e);
-			} else {
-				if (!this?.path) {
-					this.drawingStart(this.getPosition(e.point, e.rect));
-				}
+			if (!this?.path) {
+				this.drawingStart(this.getPosition(e.point, e.rect));
 			}
 			
 			// remove reference to old path
