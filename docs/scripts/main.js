@@ -27,7 +27,7 @@ class DrawingApp {
 	
 	/** View "Finger" mode Pan and Zoom settings. */
 	static VIEW_ZOOM = {
-		...DrawingApp.TOOL_ZOOM,
+		...this.TOOL_ZOOM,
 		oneFingerPan: true, // Use one finger.
 		panButton: 0 // mouse left-click. 
 	};
@@ -63,7 +63,7 @@ class DrawingApp {
 		
 		// Make sure dimensions are valid.
 		if (width <= 0 || height <= 0) {
-			const [w, h] = DrawingApp.alignDimensions(node);
+			const [w, h] = this.alignDimensions(node);
 			node.setAttribute("viewBox", `${x} ${y} ${w} ${h}`);
 		}
 	}
