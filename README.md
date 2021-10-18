@@ -122,7 +122,8 @@ example when the pointer move happens. `[SVG.DrawingTool.END]` is called when
 pointer out or pointer leave happens. No down event is triggered, but you can
 check for the initial point in the object dispatched to the event (note:
 not e.detail). It is done this way so as not to interfere with multi-finger
-events (like zoom or pan).
+events (like zoom or pan). See the code to `PathDrawer` in drawing.js for an
+example.
 
 No matter where you go, there you are. Think about that, and have a good day!
 
