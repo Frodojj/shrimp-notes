@@ -105,7 +105,7 @@ contains the following properties:
 	- Initial point where pointerdown happened.
 - isPrimaryButton
 	- Truthy if the pointerdown button pressed was the primary one, such as the 
-	  left-click, touch with a finger, or a pen-tip. (i.e. mas 1 for
+	  left-click, touch with a finger, or a pen-tip. (i.e. mask 1 for
 	  MouseEvent.buttons).
 - isEraserButton
 	- Truthy if the pointerdown button was an eraser button (i.e. mask 32 for
