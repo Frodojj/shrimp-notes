@@ -101,18 +101,13 @@ Basically, you extend this class and write methods called
 `[SVG.DrawingTool.Draw](e)` and `[SVG.DrawingTool.END](e)`. The parameter `e`
 contains the following properties:
 
-- init: \[x, y]
-	- Initial point where pointerdown happened.
-- isPrimaryButton
-	- Truthy if the pointerdown button pressed was the primary one, such as the 
-	  left-click, touch with a finger, or a pen-tip. (i.e. mask 1 for
-	  MouseEvent.buttons).
-- isEraserButton
-	- Truthy if the pointerdown button was an eraser button (i.e. mask 32 for
-	  MouseEvent.buttons).
+- buttons
+	- MouseEvent.buttons or 1 (mask for main button) if buttons is unsupported
 - currentTarget
 	- currentTarget for the event. Usually should be the svg element node that
 	  the events are attached to.
+- init: \[x, y]
+	- Initial point where pointerdown happened.
 - point: \[clientX, clientY]
 	- The point of the current move or end event.
 - rect:
