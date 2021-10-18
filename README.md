@@ -41,7 +41,10 @@ const attr = {
 ```
 
 Note: When a tool is added for the first time, event handlers for pointer
-events are added to the `node` SVG element. The next them they are reused.
+events are added to the `node` SVG element. The next time they are reused.
+To make he pointer event handlers without attaching them, just call
+`svg.drawPointer()`. The parameters for `addEventListener()` or
+`removeEventListener()` are the items of the `listeners` array.
 
 ## Erasing
 
