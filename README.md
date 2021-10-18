@@ -19,7 +19,7 @@ content or the viewPort of the SVG element.
 DrawingApp.validateViewBox(node);
 ```
 
-## Drawing a path
+## Drawing a path.
 
 To start drawing a path on the `node` SVG element use the `drawPath` tool:
 
@@ -46,7 +46,7 @@ To make he pointer event handlers without attaching them, just call
 `svg.drawPointer()`. The parameters for `addEventListener()` or
 `removeEventListener()` are the items of the `listeners` array.
 
-## Erasing
+## Erasing.
 
 If you're using a drawing pen, you can use the eraser to erase. Or you can
 use the `erase` tool:
@@ -57,13 +57,15 @@ svg.drawEraser();
 
 ## Removing the current tool.
 
-When you call a tool without removing the previous tool, the preivous tool will
+When you call a tool without removing the previous tool, the previous tool will
 be removed and the other one added in it's place. To remove the current tool
 manually without adding a new tool, call `draw(false)` like so:
 
 ```
 svg.draw(false);
 ```
+
+## Adding an arbitrary tool.
 
 To make a new tool, extend `SVG.DrawingTool`. You can find it's specification
 below:
@@ -94,6 +96,33 @@ below:
 		- Adds all event listeners to node.
 	- removeFrom(node)
 		- Removes all event listeners from node.
+
+Basically, you extend this class and write methods called
+`[SVG.DrawingTool.Draw](e)` and `[SVG.DrawingTool.END](e)`. The parameter `e`
+contains the following properties:
+
+-init: \[x, y]
+	- Initial point where pointerdown happened.
+- isPrimaryButton
+	- True if the pointerdown button pressed was the primary one, such as the 
+	  left-click, touch with a finger, or a pen-tip.
+- isEraserButton
+	- True if the pointerdown button was an eraser button (i.e. mask 32 for
+	  MouseEvent.buttons).
+- currentTarget
+	- currentTarget for the event. Usually should be the svg element node that
+	  the events are attached to.
+- point: \[clientX, clientY]
+	- The point of the current move or end event.
+- rect:
+	- The result of currentTarget.getBoundingClientRect().
+
+The method `[SVG.DrawingTool.DRAW]` is called when the drawing has started, for
+example when the pointer move happens. `[SVG.DrawingTool.END]` is called when 
+pointer out or pointer leave happens. No down event is triggered, but you can
+check for the initial point in the object dispatched to the event (note:
+not e.detail). It is done this way so as not to interfere with multi-finger
+events (like zoom or pan).
 
 No matter where you go, there you are. Think about that, and have a good day!
 
