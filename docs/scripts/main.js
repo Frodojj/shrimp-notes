@@ -7,7 +7,7 @@
 
 /**
  * Sample app that uses drawing.js classes. Controls which events are attached
- * to the svg node. */
+ * to the svg node and the parameters for those events. */
 class DrawingApp {
 	/** Default SVG attributes of path element drawn. */
 	static PATH = {
@@ -72,7 +72,6 @@ class DrawingApp {
 	
 	/** The node is the SVG Element. */
 	constructor(node) {
-		this.node = node;
 		this.svg = SVG(node);
 		
 		// Add pan and zoom after making sure has a good viewBox.
@@ -98,19 +97,69 @@ class DrawingApp {
 		this.svg.panZoom(DrawingApp.TOOL_ZOOM);
 	}
 	
+	/** Removes the current tool from being used. */
 	removeTool() {
 		this.svg.draw(false);
 	}
 }
 
 
+/** Takes care of attributes object for app. */
+class DrawingAttributes {
+	attrsMap = new Map();          // Map of names with path attributes.
+	defaultPath = DrawingApp.PATH; // Default path copied.
+	widths = [1, 2, 3, 5, 10, 20]; // Possible width values.
+	
+	/** Gets an object of attributes or makes one if it doesn't exist. */
+	getAttributes(name) {
+		const map = this.attrsMap;
+		
+		if (map.has(name)) {
+			return map.get(name);
+		}
+		else {
+			// make a new name/value pair.
+			const attrs = { ...this.defaultPath};
+			map.set(name, attrs);
+			return attrs;
+		}
+	}
+	
+	/** Sets a particular prop value for a named attribute */
+	setAttribute(name, prop, value) {
+		const attrs = this.getAttributes(name);
+		attrs[prop] = value;
+	}
+	
+	/** Sets color of attribute object name. */
+	setColor(name, value) {
+		this.setAttribute(name, "stroke", value);
+	}
+	
+	/** Sets size of attribute object name to item in widths array. */
+	setSize(name, item) {
+		const length = this.widths.length;
+		
+		// Make sure value is in array.
+		if (item > length) item = length;
+		else if (item < 0) item = 0;
+		
+		// Set the width to the value in array.
+		this.setWidth(name, this.widths[item]);
+	}
+	
+	/** Sets width of attribute object name. */
+	setWidth(name, value) {
+		this.setAttribute(name, "stroke-width", value);
+	}
+}
+
+
 /** Sets up app with the HTML document. */
 window.addEventListener("load", function(e) {
-	const defaults = DrawingApp.PATH;
-	const drawingNode = document.querySelector("main svg");
-	const drawingApp = new DrawingApp(drawingNode);
-	const paths = new Map();
-	const widths = [1, 2, 3, 5, 10, 20];
+	const node = document.querySelector("main svg");
+	const app = new DrawingApp(node);
+	const state = new DrawingAttributes();
 	
 	// Helper to add an EventListener to nodes by selector.
 	const addListener = function(selector, listener, events = ["input"]) {
@@ -124,53 +173,32 @@ window.addEventListener("load", function(e) {
 	
 	// EventListener that changes tool color.
 	const colorFn = e => {
+		let attr = e.target.dataset.tool;
 		let value = e.target.value;
-		let name = e.target.dataset.tool;
-		if (paths.has(name)) {
-			const tool = paths.get(name);
-			tool["stroke"] = value;
-		}
-		else {
-			const tool = { ...defaults, "stroke": value };
-			paths.set(name, tool);
-		}
+		state.setColor(attr, value);
+		
 		// Set icon color
-		let icon = document.querySelector("#" + name + " ~ label svg");
+		let icon = document.querySelector("#" + attr + " ~ label svg");
 		icon.setAttribute("color", value);
 	};
 	
 	// EventListener that changes tool being used.
 	const toolFn = e => {
-		let value = e.target.value;
-		let name = e.target.dataset.tool;
+		let attrName = e.target.dataset.tool;
+		let fnName = e.target.value;
 		
-		if (!name) {
-			// if no name
-			drawingApp[e.target.value]();
-		}
-		else if (paths.has(name)) {
-			const tool = paths.get(name);
-			drawingApp[e.target.value](tool);
-		}
-		else {
-			const tool = { ...defaults};
-			paths.set(name, tool);
-			drawingApp[e.target.value](tool);
+		if(!attrName) {
+			app[fnName]();
+		} else {
+			app[fnName](state.getAttributes(attrName));
 		}
 	};
 	
 	// EventListener that changes tool width.
 	const widthFn = e => {
-		let value = widths[e.target.value];
-		let name = e.target.dataset.tool;
-		if (paths.has(name)) {
-			const tool = paths.get(name);
-			tool["stroke-width"] = value;
-		}
-		else {
-			const tool = { ...defaults, "stroke-width": value };
-			paths.set(name, tool);
-		}
+		let attr = e.target.dataset.tool;
+		let value = e.target.value;
+		state.setSize(attr, value);
 	};
 	
 	// Add EventListeners for toolbar.
