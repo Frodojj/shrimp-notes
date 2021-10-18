@@ -87,9 +87,9 @@ below:
 		- Convenience function that makes a custom END event.
 	- static makeEvent(name, e, buttons, \[x, y])
 		- Convenience function that makes a custom event for a DrawingTool.
-	- static removeChildFromPoint(c)
-		- Removes an element that is at c.init point and contained
-		  by c.currentTarget. c is the custom event.
+	- static removeChildFromPoint(e)
+		- Removes an element that is at e.init point and contained
+		  by e.currentTarget.
 	- listeners
 		- Array of parameters applied to add/removeEventListener.
 	- addTo(node)
@@ -104,10 +104,11 @@ contains the following properties:
 - init: \[x, y]
 	- Initial point where pointerdown happened.
 - isPrimaryButton
-	- True if the pointerdown button pressed was the primary one, such as the 
-	  left-click, touch with a finger, or a pen-tip.
+	- Truthy if the pointerdown button pressed was the primary one, such as the 
+	  left-click, touch with a finger, or a pen-tip. (i.e. mas 1 for
+	  MouseEvent.buttons).
 - isEraserButton
-	- True if the pointerdown button was an eraser button (i.e. mask 32 for
+	- Truthy if the pointerdown button was an eraser button (i.e. mask 32 for
 	  MouseEvent.buttons).
 - currentTarget
 	- currentTarget for the event. Usually should be the svg element node that
