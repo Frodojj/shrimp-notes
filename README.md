@@ -101,7 +101,7 @@ Basically, you extend this class and write methods called
 `[SVG.DrawingTool.Draw](e)` and `[SVG.DrawingTool.END](e)`. The parameter `e`
 contains the following properties:
 
--init: \[x, y]
+- init: \[x, y]
 	- Initial point where pointerdown happened.
 - isPrimaryButton
 	- True if the pointerdown button pressed was the primary one, such as the 
