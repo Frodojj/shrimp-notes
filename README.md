@@ -133,6 +133,28 @@ class MyTool extends SVG.DrawingTool {
 }
 ```
 
+Note that you have to test and handle the eraser in your function if you want
+the eraser to work. So:
+
+```
+class MyTool extends SVG.DrawingTool {
+	[SVG.DrawingTool.DRAW](e) {
+		if(e.buttons & 32) { // eraser button
+			SVG.DrawingTool.removeChildFromPoint(e);
+			return;
+		}
+		// Do Stuff
+	}
+	
+	[SVG.DrawingTool.END](e) {
+		if(e.buttons & 32) { // eraser button
+			SVG.DrawingTool.removeChildFromPoint(e);
+		}
+		// Do Stuff
+	}
+}
+```
+
 ## Adding an arbitrary tool.
 
 To add the tool you just created, simply call `draw(tool)` like so:
