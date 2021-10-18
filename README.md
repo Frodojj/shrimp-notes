@@ -65,7 +65,7 @@ manually without adding a new tool, call `draw(false)` like so:
 svg.draw(false);
 ```
 
-## Adding an arbitrary tool.
+## Creating an arbitrary tool.
 
 To make a new tool, extend `SVG.DrawingTool`. You can find it's specification
 below:
@@ -123,7 +123,28 @@ pointer out or pointer leave happens. No down event is triggered, but you can
 check for the initial point in the object dispatched to the event (note:
 not e.detail). It is done this way so as not to interfere with multi-finger
 events (like zoom or pan). See the code to `PathDrawer` in drawing.js for an
-example.
+example. Here's a short summary:
+
+```
+class MyTool extends SVG.DrawingTool {
+	[SVG.DrawingTool.DRAW](e) {
+		// Do Stuff
+	}
+	
+	[SVG.DrawingTool.END](e) {
+		// Do Stuff
+	}
+}
+```
+
+## Adding an arbitrary tool.
+
+To add the tool you just created, simply call `draw(tool)` like so:
+
+```
+const tool = new MyTool();
+svg.draw(tool);
+```
 
 No matter where you go, there you are. Think about that, and have a good day!
 
