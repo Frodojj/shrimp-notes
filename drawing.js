@@ -250,12 +250,8 @@ SVG.DrawingTool = class {
 		}
 		
 		dispatchEvent(ev) {
-			if(this.pointer.buttons & 32) { // eraser button
-				SVG.DrawingTool.removeChildFromPoint(ev.detail);
-			} else { // not eraser button
-				const node = ev.detail.currentTarget;
-				node.dispatchEvent(ev);
-			}
+			const node = ev.detail.currentTarget;
+			node.dispatchEvent(ev);
 		}
 		
 		/** If valid buttons: If primary then sets init else resets state. */
@@ -330,7 +326,13 @@ SVG.DrawingTool = class {
 		}
 
 		/** Adds/draws points for the middle of a path. */
-		[SVG.DrawingTool.DRAW](e) {		
+		[SVG.DrawingTool.DRAW](e) {
+			if(e.buttons & 32) {
+				// eraser button
+				SVG.DrawingTool.removeChildFromPoint(e);
+				return;
+			}
+			
 			if (!this?.path) {
 				this.drawingStart(this.getPosition(e.init, e.rect));
 			}
@@ -350,7 +352,10 @@ SVG.DrawingTool = class {
 
 		/** Resets state for making a path. */
 		[SVG.DrawingTool.END](e) {
-			if (!this?.path) {
+			if(e.buttons & 32) {
+				// eraser button
+				SVG.DrawingTool.removeChildFromPoint(e);
+			} else if (!this?.path) {
 				this.drawingStart(this.getPosition(e.point, e.rect));
 			}
 			
