@@ -1,6 +1,6 @@
 /*
  * Jimmy Cerra
- * 17 Oct. 2021
+ * 18 Oct. 2021
  * MIT License
  */
 
@@ -159,12 +159,13 @@ SVG.DrawingTool = class {
 	}
 	
 	/** Removes element under c.point if it's a child of c.currentTarget. */
-	static removeChildFromPoint(c) {
-		const e = document.elementFromPoint(...c.point);
-		const t = c.currentTarget;
-		const isRemovable = (e !== t) && (e.parentNode === t || t.contains(e));
+	static removeChildFromPoint(e) {
+		const el = document.elementFromPoint(...e.point);
+		const t = e.currentTarget;
+		const isRemovable =
+			(el !== t) && (el.parentNode === t || t.contains(el));
 		if (isRemovable) {
-			e.remove();
+			el.remove();
 		}
 	}
 	
@@ -241,12 +242,13 @@ SVG.DrawingTool = class {
 		listeners = []; // The PointerEvent listeners of this PointerTool.
 		pointer = new PointerState(); // state of this PointerTool
 		
+		/** Attaches to node if it exists. */
 		constructor(node) {			
 			// Add all event listeners to this.listeners and to node.
 			for (const n of PointerTool.NAMES) {
 				const listener = [n, (e) => this[n]?.(e), PointerTool.OPTIONS];
 				this.listeners.push(listener);
-				node.addEventListener?.(...listener);
+				node?.addEventListener?.(...listener);
 			}
 		}
 		
@@ -382,7 +384,7 @@ SVG.DrawingTool = class {
 		drawingTool: null,
 		draw(tool) {
 			// Lazy creation of Dispatcher for Drawing Events
-			this.drawingPointer = this.drawingPointer || this.drawPointer();
+			this.drawingPointer = this.drawingPointer || this.pointerTool();
 			
 			// add tool if tool exists, otherwise remove tool.
 			if(tool) {
@@ -395,12 +397,18 @@ SVG.DrawingTool = class {
 			return this;
 		},
 		drawEraser() {
-			return this.draw(new ElementRemover());
+			return this.draw(this.eraserTool());
 		},
 		drawPath(attr = {}) {
-			return this.draw(new PathDrawer(this, attr));
+			return this.draw(this.pathTool(attr));
 		},
-		drawPointer() {
+		eraserTool() {
+			return new ElementRemover();
+		},
+		pathTool(attr = {}) {
+			return new PathDrawer(this, attr);
+		},
+		pointerTool() {
 			return new PointerTool(this.node);
 		}
 	});
