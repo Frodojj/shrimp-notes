@@ -15,9 +15,9 @@ class DrawingApp {
 		"stroke": "currentColor",
 		"stroke-linecap": "round",
 		"stroke-width": "2"
-
 	};
 	
+	/** Default Pan and Zoom settings. */
 	static TOOL_ZOOM = {
 		oneFingerPan: false, // Use two fingers instead.
 		panButton: 1, // mouse middle-click.
@@ -25,62 +25,81 @@ class DrawingApp {
 		zoomMin: 1/16
 	};
 	
+	/** View "Finger" mode Pan and Zoom settings. */
 	static VIEW_ZOOM = {
 		...DrawingApp.TOOL_ZOOM,
 		oneFingerPan: true, // Use one finger.
-		panButton: 0 // mouse left-lick. 
+		panButton: 0 // mouse left-click. 
 	};
 	
-	node; // SVG element to draw on.
+	/**
+	 * Utility function that returns dimensions of either:
+	 * 1. the content size (via BBox),
+	 * 2. or if falsy then the node's viewport size (BoundingClientRect),
+	 * 3. or if falsy then the default dimensions 300x150.
+	 *
+	 * @param node The SVG node (SVGSVGElement).
+	 * @return [width, height] Valid viewBox dimensions.
+	 */
+	static alignDimensions(node) {
+		const bBox = node.getBBox?.() ?? {}; // Content size.
+		const rect = node.getBoundingClientRect?.() ?? {}; // Element size.
+		const width = bBox?.width || rect?.width || 300;
+		const height = bBox?.height || rect?.height || 150;
+		return [width, height];
+	}
+	
+	/**
+	 * Utility function that makes verifies/creates a SVG node's viewBox. If
+	 * the node doesn't have a viewBox attribute, or if the viewBox's width
+	 * or height are 0 or negative, then ViewBox.alignDimensions(node)
+	 * is called.
+	 *
+	 * @param node The SVG node (SVGSVGElement)
+	 */
+	static validateViewBox(node) {
+		// baseVal doesn't exist when attribute is missing for Firefox
+		const {x=0, y=0, width=0, height=0} = node?.viewBox?.baseVal ?? {};
+		
+		// Make sure dimensions are valid.
+		if (width <= 0 || height <= 0) {
+			const [w, h] = DrawingApp.alignDimensions(node);
+			node.setAttribute("viewBox", `${x} ${y} ${w} ${h}`);
+		}
+	}
+	
 	svg; // Factory that makes SVG elements from SVG.js.
-	tool; // Drawing Tool being used.
 	
 	/** The node is the SVG Element. */
 	constructor(node) {
 		this.node = node;
 		this.svg = SVG(node);
+		
+		// Add pan and zoom after making sure has a good viewBox.
+		DrawingApp.validateViewBox(node);
 		this.svg.panZoom(DrawingApp.VIEW_ZOOM);
-		this.tool = null;
-		const pointerTool = new PointerTool();
-		for (const listener of pointerTool.listeners) {
-			this.node.addEventListener(...listener);
-		};
 	}
 	
 	/** Sets tool to draw with a SVG path element. */
 	addPath(attr = DrawingApp.PATH) {
-		this.addTool(new PathDrawer(this.svg, attr));
-	}
-	
-	/** Sets the DrawingTool to use. */
-	addTool(tool) {
-		this.removeTool();
+		this.svg.drawPath(attr);
 		this.svg.panZoom(DrawingApp.TOOL_ZOOM);
-		this.tool = tool;
-		for (const listener of this.tool.listeners) {
-			this.node.addEventListener(...listener);
-		};
 	}
 	
 	/** Sets zoom attributes to VIEW_ZOOM */
 	panZoom() {
-		this.removeTool();
+		this.svg.draw(false);
 		this.svg.panZoom(DrawingApp.VIEW_ZOOM);
 	}
 	
 	/** Sets tool to remove element under it. */
 	removeShape() {
-		this.addTool(new ElementRemover());
+		this.svg.drawEraser();
+		this.svg.panZoom(DrawingApp.TOOL_ZOOM);
 	}
 	
-	/** Unsets the DrawingTool being used. */
 	removeTool() {
-		if (this.tool) {
-			for (const listener of this.tool.listeners) {
-				this.node.removeEventListener(...listener);
-			}
-			this.tool = null;
-		}
+		this.svg.draw(false);
 	}
 }
 
@@ -89,7 +108,6 @@ class DrawingApp {
 window.addEventListener("load", function(e) {
 	const defaults = DrawingApp.PATH;
 	const drawingNode = document.querySelector("main svg");
-	ViewBox.validate(drawingNode);
 	const drawingApp = new DrawingApp(drawingNode);
 	const paths = new Map();
 	const widths = [1, 2, 3, 5, 10, 20];

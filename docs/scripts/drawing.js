@@ -4,25 +4,18 @@
  * MIT License
  */
 
-/** Utility functions for dealing with a SVG viewBox. */
-class ViewBox {
-	/**
-	 * Utility function that returns dimensions of either:
-	 * 1. the content size (via BBox),
-	 * 2. or if falsy then the node's viewport size (BoundingClientRect),
-	 * 3. or if falsy then the default dimensions 300x150.
-	 *
-	 * @param node The SVG node (SVGSVGElement).
-	 * @return [width, height] Valid viewBox dimensions.
-	 */
-	static alignDimensions(node) {
-		const bBox = node.getBBox?.() ?? {}; // Content size.
-		const rect = node.getBoundingClientRect?.() ?? {}; // Element size.
-		const width = bBox?.width || rect?.width || 300;
-		const height = bBox?.height || rect?.height || 150;
-		return [width, height];
-	}
 
+/** Represents a Tool that you draw with. Uses custom events. */
+SVG.DrawingTool = class {
+	/** Event invoked while drawing. */
+	static DRAW = "drawing";
+	
+	/** Event invoked when drawing is finished. */
+	static END = "drawingend";
+	
+	/** Events associated with drawing (DRAW, END) */
+	static NAMES = [this.DRAW, this.END];
+	
 	/**
 	 * Factory that makes a utility function that transforms an x, y position
 	 * from viewPort to viewBox according to SVG spec, viewBox, and
@@ -54,7 +47,7 @@ class ViewBox {
 			const yScale = box.height / height;
 			return (xScale < yScale) ? yScale : xScale;
 		};
-
+		
 		// SVG algorithms for aligning viewPort coordinates with
 		// viewBox at max (bottom/end) or middle (middle).
 		const xMax = (scale, x, w) => (x - w) * scale + box.x + box.width;
@@ -65,7 +58,7 @@ class ViewBox {
 		const yMid = (scale, y, h) =>
 			y * scale + box.y + (box.height - h * scale) / 2;
 		const yMin = (scale, y) => y * scale + box.y;
-
+		
 		// Returns a function for aligning x/y values. Choose the
 		// appropriate alignment function for chosen SVG aspect ratio method.
 		const alignFn = (xAlignFn, yAlignFn) => {
@@ -80,7 +73,7 @@ class ViewBox {
 				default:
 					scaleFn = scaleUp;
 			}
-
+			
 			// Returns a function that transforms coordinates on viewPort
 			// to coordinates in the viewBox.
 			return (x, y, width, height) => {
@@ -88,99 +81,61 @@ class ViewBox {
 				return [xAlignFn(scale, x, width), yAlignFn(scale, y, height)];
 			};
 		};
-
+		
 		// non-uniform scaling with box = viewPort dimensions.
 		const nonuniformFn = (x, y, width, height) => {
 			const xInBox = x * box.width / width + box.x;
 			const yInBox = y * box.height / height + box.y;
 			return [xInBox, yInBox];
 		};
-
+		
 		// Determine offset using SVG algorithm
 		switch(fit.align) {
 			// none = nonuniform scaling
 			case(fit.SVG_PRESERVEASPECTRATIO_NONE):
 				return nonuniformFn;
-
 			case fit.SVG_PRESERVEASPECTRATIO_XMINYMIN:
 				return alignFn(xMin, yMin);
-
 			case fit.SVG_PRESERVEASPECTRATIO_XMIDYMIN:
 				return alignFn(xMid, yMin);
-
 			case fit.SVG_PRESERVEASPECTRATIO_XMAXYMIN:
 				return alignFn(xMax, yMin);
-
 			case fit.SVG_PRESERVEASPECTRATIO_XMINYMID:
 				return alignFn(xMin, yMid);
-
 			case fit.SVG_PRESERVEASPECTRATIO_XMAXYMID:
 				return alignFn(xMax, yMid);
-
 			case fit.SVG_PRESERVEASPECTRATIO_XMINYMAX:
 				return alignFn(xMin, yMax);
-
 			case fit.SVG_PRESERVEASPECTRATIO_XMIDYMAX:
 				return alignFn(xMid, yMax);
-
 			case fit.SVG_PRESERVEASPECTRATIO_XMAXYMAX:
 				return alignFn(xMax, yMax);
-
 			// Default according to SVG spec
 			case fit.SVG_PRESERVEASPECTRATIO_XMIDYMID:
 			default:
 				return alignFn(xMid, yMid);
 		}
 	}
-
-	/**
-	 * Utility function that makes verifies/creates a SVG node's viewBox. If
-	 * the node doesn't have a viewBox attribute, or if the viewBox's width
-	 * or height are 0 or negative, then ViewBox.alignDimensions(node)
-	 * is called.
-	 *
-	 * @param node The SVG node (SVGSVGElement)
-	 */
-	static validate(node) {
-		// baseVal doesn't exist when attribute is missing for Firefox
-		const {x=0, y=0, width=0, height=0} = node?.viewBox?.baseVal ?? {};
-
-		// Make sure dimensions are valid.
-		if (width <= 0 || height <= 0) {
-			const [w, h] = ViewBox.alignDimensions(node);
-			node.setAttribute("viewBox", `${x} ${y} ${w} ${h}`);
-		}
-	}
-}
-
-
-/** Used to bind/unbind groups of events with a node. */
-class Dispatcher {
-	listeners = []; // The EventListeners associated with this Dispatcher.
-}
-
-
-/** Represents a Tool that you draw with. Uses custom events. */
-class DrawingTool extends Dispatcher {
-	static DRAW = "drawing"; // Event invoked while drawing.
-	static END = "drawingend"; // Event invoked when drawing is finished.
-	static NAMES = [DrawingTool.DRAW, DrawingTool.END];
 	
 	/** Makes a DRAW CustomEvent. */
 	static drawEvent(e, {buttons, point}) {
-		return DrawingTool.makeEvent(DrawingTool.DRAW, e, buttons, point);
+		return this.makeEvent(
+			this.DRAW, e, buttons, point
+		);
 	}
 	
 	/** Makes an END CustomEvent. */
 	static endEvent(e, {buttons, point}) {
-		return DrawingTool.makeEvent(DrawingTool.END, e, buttons, point);
+		return this.makeEvent(
+			this.END, e, buttons, point
+		);
 	}
 	
 	/**
 	 * Convenience function to make CustomEvent of name and with detail object
-	 * = {clientHeight, clientWidth, clientX, clientY, offsetX, offsetY} where
-	 * clientHeight/clientWidth come from the BoundingClientRect of the
-	 * currentTarget.
+	 * with useful properties such as the initial point and buttons that were
+	 * invoked at pointer down, current point, attached currentTarget and
+	 * it's bounding rect, etc.
 	 *
 	 * @param name    Name of the CustomEvent to create.
 	 * @param e       PointerEvent.
@@ -188,10 +143,9 @@ class DrawingTool extends Dispatcher {
 	 * @param [x,y]   Initial pointerdown location.
 	 */
 	static makeEvent(name, e, buttons, [x, y]) {
-		const currentTarget = e.currentTarget;
+		const currentTarget = e.currentTarget; // Attached node.
 		const eraserMask = 32; // From MouseDown.buttons
 		const primaryMask = 1; // From MouseDown.buttons
-		
 		return new CustomEvent(name, {
 			detail: {
 				init: [x, y],
@@ -214,192 +168,242 @@ class DrawingTool extends Dispatcher {
 		}
 	}
 	
+	/** The EventListeners associated with this tool. */
+	listeners = [];
+	
 	/** Makes a blank tool. Passes e.detail to the handlers. */
 	constructor() {
-		super();
-		for (const n of DrawingTool.NAMES) {
+		for (const n of SVG.DrawingTool.NAMES) {
 			this.listeners.push([n, (e) => this[n]?.(e.detail)]);
 		}
 	}
-}
-
-/** Represents the state of a PointerTool */
-class PointerState {
-	static MOVING = 2;// pointer is moving.
-	static INIT = 1; // pointer is down.
-	static NONE = 0; // not doing anything.
 	
-	buttons = 0; // Buttons pressed when pointerdown occurred.
-	point = []; // Point where pointerdown occurred.
-	state = PointerTool.NONE; // state of pointer.
-	
-	constructor() {
-		this.reset();
-	}
-	
-	init(x, y, buttons) {
-		this.buttons = buttons;
-		this.point = [x, y];
-		this.state = PointerState.INIT;
-	}
-	
-	moving() {
-		this.state = PointerState.MOVING;
-	}
-	
-	reset() {
-		this.buttons = 0;
-		this.point = [];
-		this.state = PointerState.NONE;
-	}
-}
-
-
-
-/** Represents PointerEvents that dispatch the custom DrawingTool events. */
-class PointerTool extends Dispatcher {
-	static NAMES = ["pointerdown", "pointerleave", "pointermove", "pointerup"];
-	static OPTIONS = {capture: false, passive: false};
-	
-	// 01 = binary 000001 bitmask for left-click/pen-tip.
-	// 32 = binary 100000 bitmask for eraser.
-	// 33 = binary 100001 bitmask for left-click | eraser.
-	static VALID_BUTTONS = 33;
-	
-	// state of the pointerTool
-	pointer = new PointerState();
-	
-	/**
-	 * Makes a PointerTool. Options used are {capture: false, passive: false}
-	 * because all events call e.preventDefault() every time.
-	 */
-	constructor() {
-		super();
-		for (const n of PointerTool.NAMES) {
-			this.listeners.push([n, (e) => this[n]?.(e), PointerTool.OPTIONS]);
+	/** Adds each event listener to the node. */
+	addTo(node) {
+		for (const listener of this.listeners) {
+			node.addEventListener(...listener);
 		}
 	}
 	
-	/** If valid buttons: If primary then sets init else resets state. */
-	pointerdown(e) {
-		// If buttons is not supported (undefined or 0), set it to bitmask
-		// for left-click/pen-tip = 1 because something triggered pointerdown.
-		const buttons = (e.buttons || 1) & PointerTool.VALID_BUTTONS;
-		if (buttons) {
-			if (e.isPrimary) {
-				this.pointer.init(e.clientX, e.clientY, buttons);
-			} else {
+	/** Removes each event listener from the node. */
+	removeFrom(node) {
+		for (const listener of this.listeners) {
+			node.removeEventListener(...listener);
+		}
+	}
+};
+
+// Add to SVG.js without polluting global namespace.
+(function (svg) {
+	/** Represents the state of a PointerTool */
+	class PointerState {
+		static MOVING = 2;// pointer is moving.
+		static INIT = 1; // pointer is down.
+		static NONE = 0; // not doing anything.
+		
+		buttons = 0; // Buttons pressed when pointerdown occurred.
+		point = []; // Point where pointerdown occurred.
+		state = PointerTool.NONE; // state of pointer.
+		
+		constructor() {
+			this.reset();
+		}
+		
+		init(x, y, buttons) {
+			this.buttons = buttons;
+			this.point = [x, y];
+			this.state = PointerState.INIT;
+		}
+		
+		moving() {
+			this.state = PointerState.MOVING;
+		}
+		
+		reset() {
+			this.buttons = 0;
+			this.point = [];
+			this.state = PointerState.NONE;
+		}
+	}
+	
+	
+	/** Dispatches SVG.DrawingTool events with PointerEvents. */
+	class PointerTool {
+		static NAMES =
+			["pointerdown", "pointerleave", "pointermove", "pointerup"];
+		static OPTIONS = {capture: false, passive: false};
+		
+		// 01 = binary 000001 bitmask for left-click/pen-tip.
+		// 32 = binary 100000 bitmask for eraser.
+		// 33 = binary 100001 bitmask for left-click | eraser.
+		static VALID_BUTTONS = 33;
+		
+		listeners = []; // The PointerEvent listeners of this PointerTool.
+		pointer = new PointerState(); // state of this PointerTool
+		
+		constructor(node) {			
+			// Add all event listeners to this.listeners and to node.
+			for (const n of PointerTool.NAMES) {
+				const listener = [n, (e) => this[n]?.(e), PointerTool.OPTIONS];
+				this.listeners.push(listener);
+				node.addEventListener?.(...listener);
+			}
+		}
+		
+		/** If valid buttons: If primary then sets init else resets state. */
+		pointerdown(e) {
+			// If buttons is not supported (undefined or 0), set it to bitmask
+			// for left-click/pen-tip = 1
+			const buttons = (e.buttons || 1) & PointerTool.VALID_BUTTONS;
+			if (buttons) {
+				if (e.isPrimary) {
+					this.pointer.init(e.clientX, e.clientY, buttons);
+				} else {
+					this.pointer.reset();
+				}
+			}
+		}
+
+		/** Same as pointerup function. */
+		pointerleave(e) {
+			this.pointerup(e);
+		}
+
+		/** Sets state to MOVING & dispatches DRAW event if state is truthy. */
+		pointermove(e) {
+			if (this.pointer.state && e.isPrimary) {
+				this.pointer.moving();
+				const ev = SVG.DrawingTool.drawEvent(e, this.pointer);
+				e.currentTarget.dispatchEvent(ev);
+			}
+		}
+
+		/** Dispatches END event and sets state to NONE if state is truthy. */
+		pointerup(e) {
+			if (this.pointer.state && e.isPrimary) {
+				const ev = SVG.DrawingTool.endEvent(e, this.pointer);
+				e.currentTarget.dispatchEvent(ev);
 				this.pointer.reset();
 			}
 		}
 	}
-
-	/** Same as pointerup function. */
-	pointerleave(e) {
-		this.pointerup(e);
-	}
-
-	/** Sets state to MOVING & dispatches DRAW event if state is truthy. */
-	pointermove(e) {
-		if (this.pointer.state && e.isPrimary) {
-			this.pointer.moving();
-			const ev = DrawingTool.drawEvent(e, this.pointer);
-			e.currentTarget.dispatchEvent(ev);
+	
+	
+	/** Removes elements under a pointer except for attached element. */
+	class ElementRemover extends SVG.DrawingTool {
+		[SVG.DrawingTool.DRAW](e) {
+			SVG.DrawingTool.removeChildFromPoint(e);
 		}
-	}
-
-	/** Dispatches END event and sets state to NONE if state is truthy. */
-	pointerup(e) {
-		if (this.pointer.state && e.isPrimary) {
-			const ev = DrawingTool.endEvent(e, this.pointer);
-			e.currentTarget.dispatchEvent(ev);
-			this.pointer.reset();
+		
+		[SVG.DrawingTool.END](e) {
+			SVG.DrawingTool.removeChildFromPoint(e);
 		}
-	}
-}
-
-
-/** Tool that removes elements under a pointer, except for attached element. */
-class ElementRemover extends DrawingTool {
-	[DrawingTool.DRAW](e) {
-		DrawingTool.removeChildFromPoint(e);
 	}
 	
-	[DrawingTool.END](e) {
-		DrawingTool.removeChildFromPoint(e);
-	}
-}
+	
+	/** Creates SVG paths from a SVG.js factory. */
+	class PathDrawer extends SVG.DrawingTool {
+		align; // Function that aligns coordinates from viewPort to viewBox.
+		attr; // SVG.js path's attributes.
+		path; // SVG.js path that's being drawn.
+		svg; // SVG.js factory that makes the path.
 
-
-/** Creates SVG paths from a SVG.js factory. */
-class PathDrawer extends DrawingTool {
-	align; // Function that aligns coordinates from viewPort to viewBox.
-	attr; // SVG.js path's attributes.
-	path; // SVG.js path that's being drawn.
-	svg; // SVG.js factory that makes the path.
-
-	/**
-	 * Makes a PathDrawer.
-	 *
-	 * @param svgFactory Makes nodes. The result of calling SVG()
-	 * @param svgAttributes Attributes of the SVG path element made.
-	 */
-	constructor(svgFactory, svgAttributes = {}) {
-		super();
-		this.attr = svgAttributes;
-		this.svg = svgFactory;
-		this.align = ViewBox.alignXYFn(svgFactory.node);
-	}
-
-	/** Adds/draws points for the middle of a path. */
-	[DrawingTool.DRAW](e) {
-		if (e.isEraserButton) {
-			DrawingTool.removeChildFromPoint(e);
-			return;
-		}
-		
-		if (!this?.path) {
-			this.drawingStart(this.getPosition(e.init, e.rect));
+		/**
+		 * Makes a PathDrawer.
+		 *
+		 * @param svgFactory Makes nodes. The result of calling SVG()
+		 * @param svgAttributes Attributes of the SVG path element made.
+		 */
+		constructor(svgFactory, svgAttributes = {}) {
+			super();
+			this.attr = svgAttributes;
+			this.svg = svgFactory;
+			this.align = SVG.DrawingTool.alignXYFn(svgFactory.node);
 		}
 
-		const [x, y] = this.getPosition(e.point, e.rect);
-
-		// Create new point in SVG syntax
-		const newPoint = "L " + x + " " + y;
-
-		// Add new point to path's points
-		const points = this.path.array();
-		points.push(newPoint);
-
-		// Redraw path
-		this.path.plot(points);
-	}
-
-	/** Resets state for making a path. */
-	[DrawingTool.END](e) {
-		if (e.isEraserButton) {
-			DrawingTool.removeChildFromPoint(e);
-		} else {
-			if (!this?.path) {
-				this.drawingStart(this.getPosition(e.point, e.rect));
+		/** Adds/draws points for the middle of a path. */
+		[SVG.DrawingTool.DRAW](e) {
+			if (e.isEraserButton) {
+				SVG.DrawingTool.removeChildFromPoint(e);
+				return;
 			}
+			
+			if (!this?.path) {
+				this.drawingStart(this.getPosition(e.init, e.rect));
+			}
+
+			const [x, y] = this.getPosition(e.point, e.rect);
+
+			// Create new point in SVG syntax
+			const newPoint = "L " + x + " " + y;
+
+			// Add new point to path's points
+			const points = this.path.array();
+			points.push(newPoint);
+
+			// Redraw path
+			this.path.plot(points);
 		}
-		
-		// remove reference to old path
-		this.path = null;
-	}
 
-	/** Creates the path node at the initial point. */
-	drawingStart([x, y]) {
-		// Initial point, and a 0 length line to display point, in SVG syntax
-		const initPoint = "M " + x + " " + y + " l 0 0";
+		/** Resets state for making a path. */
+		[SVG.DrawingTool.END](e) {
+			if (e.isEraserButton) {
+				SVG.DrawingTool.removeChildFromPoint(e);
+			} else {
+				if (!this?.path) {
+					this.drawingStart(this.getPosition(e.point, e.rect));
+				}
+			}
+			
+			// remove reference to old path
+			this.path = null;
+		}
 
-		// Draw the SVG path and return it.
-		this.path = this.svg.path(initPoint).attr(this.attr);
-	}
+		/** Creates the path node at the initial point. */
+		drawingStart([x, y]) {
+			// Initial point and a 0 length line in SVG syntax 
+			// to display the point.
+			const initPoint = "M " + x + " " + y + " l 0 0";
 
-	/** Scales position with element's bounds and SVG viewBox */
-	getPosition([x, y], rect) {
-		return this.align(x-rect.x, y-rect.y, rect.width, rect.height);
+			// Draw the SVG path and return it.
+			this.path = this.svg.path(initPoint).attr(this.attr);
+		}
+
+		/** Scales position with element's bounds and SVG viewBox */
+		getPosition([x, y], rect) {
+			return this.align(x-rect.x, y-rect.y, rect.width, rect.height);
+		}
 	}
-}
+	
+	
+	// Add draw function to SVG.js
+	svg.extend(svg.Svg, {
+		drawingPointer: null,
+		drawingTool: null,
+		draw(tool) {
+			// Lazy creation of Dispatcher for Drawing Events
+			this.drawingPointer = this.drawingPointer || this.drawPointer();
+			
+			// add tool if tool exists, otherwise remove tool.
+			if(tool) {
+				this.draw(false);
+				this.drawingTool = tool;
+				this.drawingTool.addTo(this.node);
+			} else {
+				this.drawingTool?.removeFrom?.(this.node);
+			}
+			return this;
+		},
+		drawEraser() {
+			return this.draw(new ElementRemover());
+		},
+		drawPath(attr = {}) {
+			return this.draw(new PathDrawer(this, attr));
+		},
+		drawPointer() {
+			return new PointerTool(this.node);
+		}
+	});
+})(SVG);
+
+
