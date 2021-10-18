@@ -72,10 +72,10 @@ class DrawingApp {
 	
 	/** The node is the SVG Element. */
 	constructor(node) {
-		this.svg = SVG(node);
-		
-		// Add pan and zoom after making sure has a good viewBox.
+		// Make sure has a good viewBox.
 		DrawingApp.validateViewBox(node);
+		
+		this.svg = SVG(node);
 		this.svg.panZoom(DrawingApp.VIEW_ZOOM);
 	}
 	
@@ -95,11 +95,6 @@ class DrawingApp {
 	removeShape() {
 		this.svg.drawEraser();
 		this.svg.panZoom(DrawingApp.TOOL_ZOOM);
-	}
-	
-	/** Removes the current tool from being used. */
-	removeTool() {
-		this.svg.draw(false);
 	}
 }
 
