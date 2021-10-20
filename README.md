@@ -48,8 +48,8 @@ To make he pointer event handlers without attaching them, just call
 
 ## Erasing.
 
-If you're using a drawing pen, you can use the eraser to erase. Or you can
-use the `erase` tool:
+If you're using a drawing pen, you can use the eraser to remove the top shape.
+Or you can use the `erase` tool to do the same thing:
 
 ```
 svg.drawEraser();
@@ -58,11 +58,22 @@ svg.drawEraser();
 ## Removing the current tool.
 
 When you call a tool without removing the previous tool, the previous tool will
-be removed and the other one added in it's place. To remove the current tool
-manually without adding a new tool, call `draw(false)` like so:
+be removed and the other one added in it's place.
+
+To remove the current tool manually without adding a new tool, call
+`draw(false)` like so:
 
 ```
 svg.draw(false);
+```
+
+## Adding an arbitrary tool.
+
+To add a tool, simply call `draw(tool)` like so:
+
+```
+const tool = new MyTool();
+svg.draw(tool);
 ```
 
 ## Creating an arbitrary tool.
@@ -115,14 +126,18 @@ contains the following properties:
 
 The method `[SVG.DrawingTool.DRAW]` is called when the drawing has started, for
 example when the pointer move happens. `[SVG.DrawingTool.END]` is called when 
-pointer out or pointer leave happens. No down event is triggered, but you can
-check for the initial point in the object dispatched to the event (note:
-not e.detail). It is done this way so as not to interfere with multi-finger
-events (like zoom or pan). See the code to `PathDrawer` in drawing.js for an
-example. Here's a short summary:
+pointer out or pointer leave happens. The down event is triggers
+`[SVG.DrawingTool.START]`, but is not initiated until the next pointer move or
+pointer up/leave event. It is done this way so as not to interfere with
+multi-finger events (like zoom or pan). See the code to `PathDrawer` in
+drawing.js for an example. Here's a short summary:
 
 ```
 class MyTool extends SVG.DrawingTool {
+	[SVG.DrawingTool.START](e) {
+		// Do Stuff
+	}
+
 	[SVG.DrawingTool.DRAW](e) {
 		// Do Stuff
 	}
@@ -131,37 +146,6 @@ class MyTool extends SVG.DrawingTool {
 		// Do Stuff
 	}
 }
-```
-
-Note that you have to test and handle the eraser in your function if you want
-the eraser to work. So:
-
-```
-class MyTool extends SVG.DrawingTool {
-	[SVG.DrawingTool.DRAW](e) {
-		if(e.buttons & 32) { // eraser button
-			SVG.DrawingTool.removeChildFromPoint(e);
-			return;
-		}
-		// Do Stuff
-	}
-	
-	[SVG.DrawingTool.END](e) {
-		if(e.buttons & 32) { // eraser button
-			SVG.DrawingTool.removeChildFromPoint(e);
-		}
-		// Do Stuff
-	}
-}
-```
-
-## Adding an arbitrary tool.
-
-To add the tool you just created, simply call `draw(tool)` like so:
-
-```
-const tool = new MyTool();
-svg.draw(tool);
 ```
 
 No matter where you go, there you are. Think about that, and have a good day!
