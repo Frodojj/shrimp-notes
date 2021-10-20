@@ -82,6 +82,8 @@ To make a new tool, extend `SVG.DrawingTool`. You can find it's specification
 below:
 
 - SVG.DrawingTool
+	- static START
+		- Represents the custom event that drawing is starting.
 	- static DRAW
 		- Represents the custom event that drawing is ongoing.
     - static END
@@ -92,15 +94,18 @@ below:
 		- Higher order function that returns another function that transforms
 		  coordinates in the element (with width/height of the bounding box)
 		  to coordinates in the SVG node's viewBox.
+	- static clientEvent(name, e, init)
+		- Convenience function that makes a custom event for a at clientX/Y.
 	- static drawEvent(e, {buttons, point})
 		- Convenience function that makes a custom DRAW event.
 	- static endEvent(e, {buttons, point})
 		- Convenience function that makes a custom END event.
-	- static makeEvent(name, e, buttons, \[x, y])
-		- Convenience function that makes a custom event for a DrawingTool.
-	- static removeChildFromPoint(e)
-		- Removes an element that is at e.init point and contained
-		  by e.currentTarget.
+	- static eventDetail(node, \[x, y], {buttons, point})
+		- Makes detail objects for the custom event.
+	- static removeTop(e)
+		- Removes an element at e.init point and contained by currentTarget.
+	- static startEvent(e, init)
+		- Convience function to make a custom START event.
 	- listeners
 		- Array of parameters applied to add/removeEventListener.
 	- addTo(node)
