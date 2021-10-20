@@ -113,9 +113,8 @@ below:
 	- removeFrom(node)
 		- Removes all event listeners from node.
 
-Basically, you extend this class and write methods called
-`[SVG.DrawingTool.Draw](e)` and `[SVG.DrawingTool.END](e)`. The parameter `e`
-contains the following properties:
+Basically, you extend this class and write methods that call the Events. The detail
+parameter `e` contains the following properties:
 
 - buttons
 	- MouseEvent.buttons or 1 (mask for main button) if buttons is unsupported
