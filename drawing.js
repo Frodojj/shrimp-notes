@@ -1,6 +1,6 @@
 /*
  * Jimmy Cerra
- * 18 Oct. 2021
+ * 20 Oct. 2021
  * MIT License
  */
 
@@ -8,13 +8,16 @@
 /** Represents a Tool that you draw with. Uses custom events. */
 SVG.DrawingTool = class {
 	/** Event invoked while drawing. */
+	static START = "drawingstart";
+	
+	/** Event invoked while drawing. */
 	static DRAW = "drawing";
 	
 	/** Event invoked when drawing is finished. */
 	static END = "drawingend";
 	
 	/** Events associated with drawing (DRAW, END) */
-	static NAMES = [this.DRAW, this.END];
+	static NAMES = [this.START, this.DRAW, this.END];
 	
 	/**
 	 * Factory that makes a utility function that transforms an x, y position
@@ -76,16 +79,22 @@ SVG.DrawingTool = class {
 			
 			// Returns a function that transforms coordinates on viewPort
 			// to coordinates in the viewBox.
-			return (x, y, width, height) => {
+			return ([x, y], {left, top, width, height}) => {
+				const dx = x - left;
+				const dy = y - top;
 				const scale = scaleFn(width, height);
-				return [xAlignFn(scale, x, width), yAlignFn(scale, y, height)];
+				const xInBox = xAlignFn(scale, dx, width);
+				const yInBox = yAlignFn(scale, dy, height);
+				return [xInBox, yInBox];
 			};
 		};
 		
 		// non-uniform scaling with box = viewPort dimensions.
-		const nonuniformFn = (x, y, width, height) => {
-			const xInBox = x * box.width / width + box.x;
-			const yInBox = y * box.height / height + box.y;
+		const nonuniformFn = ([x, y], {left, top, width, height}) => {
+			const dx = x - left;
+			const dy = y - top;
+			const xInBox = dx * box.width / width + box.x;
+			const yInBox = dy * box.height / height + box.y;
 			return [xInBox, yInBox];
 		};
 		
@@ -117,53 +126,59 @@ SVG.DrawingTool = class {
 		}
 	}
 	
-	/** Makes a DRAW CustomEvent. */
-	static drawEvent(e, {buttons, point}) {
-		return this.makeEvent(
-			this.DRAW, e, buttons, point
-		);
-	}
-	
-	/** Makes an END CustomEvent. */
-	static endEvent(e, {buttons, point}) {
-		return this.makeEvent(
-			this.END, e, buttons, point
-		);
-	}
-	
-	/**
-	 * Convenience function to make CustomEvent of name and with detail object
-	 * with useful properties such as the initial point and buttons that were
-	 * invoked at pointer down, current point, attached currentTarget and
-	 * it's bounding rect, etc.
-	 *
-	 * @param name    Name of the CustomEvent to create.
-	 * @param e       PointerEvent.
-	 * @param buttons Inital pointerdown button mask (see MouseDown.buttons)
-	 * @param [x,y]   Initial pointerdown location.
-	 */
-	static makeEvent(name, e, buttons, [x, y]) {
-		const currentTarget = e.currentTarget; // Attached node.
+	/** Convenience function to make CustomEvent of name at clientX/Y. */
+	static clientEvent(name, e, init) {
+		const node = e.currentTarget; // Attached node.
+		const point = [e.clientX, e.clientY];
 		return new CustomEvent(name, {
-			detail: {
-				buttons: buttons,
-				currentTarget: currentTarget,
-				init: [x, y],
-				point: [e.clientX, e.clientY],
-				rect: currentTarget.getBoundingClientRect()
-			}
+			detail: this.eventDetail(node, point, init)
 		});
 	}
 	
-	/** Removes element under c.point if it's a child of c.currentTarget. */
-	static removeChildFromPoint(e) {
-		const el = document.elementFromPoint(...e.point);
-		const t = e.currentTarget;
-		const isRemovable =
-			(el !== t) && (el.parentNode === t || t.contains(el));
-		if (isRemovable) {
+	/** Makes a DRAW CustomEvent. */
+	static drawEvent(e, init) {
+		return this.clientEvent(this.DRAW, e, init);
+	}
+	
+	/** Makes an END CustomEvent. */
+	static endEvent(e, init) {
+		return this.clientEvent(this.END, e, init);
+	}
+	
+	/**
+	 * Makes the detail object for the custom event.
+	 * 
+	 * @param node    The currentTarget node where listener is attached.
+	 * @param [x,y]   The current point of the event.
+	 * @param buttons The initial MouseEvent.buttons at pointer down.
+	 * @param point   The initial point at pointer down.
+	 */
+	static eventDetail(node, [x, y], {buttons, point}) {
+		const [xi, yi] = point;
+		return {
+			buttons: buttons,
+			currentTarget: node,
+			init: [xi, yi],
+			point: [x, y],
+			rect: node.getBoundingClientRect()
+		};
+	}
+		
+	/** Removes element at point if isn't root but is contained by root. */
+	static removeTop(point, root) {
+		const el = document.elementFromPoint(...point);
+		if (el !== root && (el.parentNode === root || root.contains(el))) {
 			el.remove();
 		}
+	}
+	
+	/** Makes a START CustomEvent. */
+	static startEvent(e, init) {
+		const node = e.currentTarget; // Attached node.
+		const point = init.point;
+		return new CustomEvent(this.START, {
+			detail: this.eventDetail(node, point, init)
+		});
 	}
 	
 	/** The EventListeners associated with this tool. */
@@ -172,7 +187,17 @@ SVG.DrawingTool = class {
 	/** Makes a blank tool. Passes e.detail to the handlers. */
 	constructor() {
 		for (const n of SVG.DrawingTool.NAMES) {
-			this.listeners.push([n, (e) => this[n]?.(e.detail)]);
+			const fn = (e) => {
+				const d = e.detail;
+				if(d.buttons & 32) {
+					// eraser button
+					SVG.DrawingTool.removeTop(d.point, d.currentTarget);
+				} else {
+					// call drawing tool event listener with detail object.
+					this[n]?.(d);
+				}
+			};
+			this.listeners.push([n, fn]);
 		}
 	}
 	
@@ -231,11 +256,6 @@ SVG.DrawingTool = class {
 			["pointerdown", "pointerleave", "pointermove", "pointerup"];
 		static OPTIONS = {capture: false, passive: false};
 		
-		// 01 = binary 000001 bitmask for left-click/pen-tip.
-		// 32 = binary 100000 bitmask for eraser.
-		// 33 = binary 100001 bitmask for left-click | eraser.
-		static VALID_BUTTONS = 33;
-		
 		listeners = []; // The PointerEvent listeners of this PointerTool.
 		pointer = new PointerState(); // state of this PointerTool
 		
@@ -256,9 +276,17 @@ SVG.DrawingTool = class {
 		
 		/** If valid buttons: If primary then sets init else resets state. */
 		pointerdown(e) {
+			console.log(`pointerdown isPrimary: ${e.isPrimary}`);
+			console.log(`pointerdown this.pointer.state: ${this.pointer.state}`);
+			console.log(`pointerdown buttons: ${e.buttons}`);
+			console.log(`pointerdown e:`, e);
+			
+			// 01 = binary 000001 bitmask for left-click/pen-tip.
+			// 32 = binary 100000 bitmask for eraser.
+			// 33 = binary 100001 bitmask for left-click | eraser.
 			// If buttons is not supported (undefined or 0), set it to bitmask
 			// for left-click/pen-tip = 1
-			const buttons = (e.buttons || 1) & PointerTool.VALID_BUTTONS;
+			const buttons = (e.buttons || 1) & 33;
 			if (buttons) {
 				if (e.isPrimary) {
 					this.pointer.init(e.clientX, e.clientY, buttons);
@@ -275,33 +303,61 @@ SVG.DrawingTool = class {
 
 		/** Sets state to MOVING & dispatches DRAW event if state is truthy. */
 		pointermove(e) {
-			if (this.pointer.state && e.isPrimary) {
-				this.pointer.moving();
-				const ev = SVG.DrawingTool.drawEvent(e, this.pointer);
-				this.dispatchEvent(ev);
+			console.log(`pointermove isPrimary: ${e.isPrimary}`);
+			console.log(`pointermove this.pointer.state: ${this.pointer.state}`);
+			console.log(`pointermove e:`, e);
+			if (e.isPrimary) {
+				switch(this.pointer.state) {
+					case PointerState.INIT: {
+						// Dispatching here in case two fingers, cuz second
+						// finger sets state to NONE, but second finger's
+						// pointerdown is fired after primary finger.
+						const ev = SVG.DrawingTool.startEvent(e, this.pointer);
+						this.dispatchEvent(ev);
+						this.pointer.moving();
+						// fall through cuz now moving
+					}
+					case PointerState.MOVING: {
+						const ev = SVG.DrawingTool.drawEvent(e, this.pointer);
+						this.dispatchEvent(ev);
+					}
+				}
 			}
 		}
 
 		/** Dispatches END event and sets state to NONE if state is truthy. */
 		pointerup(e) {
-			if (this.pointer.state && e.isPrimary) {
-				const ev = SVG.DrawingTool.endEvent(e, this.pointer);
-				this.dispatchEvent(ev);
-				this.pointer.reset();
+			console.log(`PointerUp isPrimary: ${e.isPrimary}`);
+			console.log(`PointerUp this.pointer.state: ${this.pointer.state}`);
+			console.log(`PointerUp e:`, e);
+			if (e.isPrimary) {
+				switch(this.pointer.state) {
+					case PointerState.INIT: {
+						// Dispatching here in case two fingers.
+						const ev = SVG.DrawingTool.startEvent(e, this.pointer);
+						this.dispatchEvent(ev);
+						// fall through cuz now done
+					}
+					case PointerState.MOVING: {
+						const ev = SVG.DrawingTool.endEvent(e, this.pointer);
+						this.dispatchEvent(ev);
+						this.pointer.reset();
+					}
+				}
 			}
 		}
 	}
 	
-	
 	/** Removes elements under a pointer except for attached element. */
 	class ElementRemover extends SVG.DrawingTool {
-		[SVG.DrawingTool.DRAW](e) {
-			SVG.DrawingTool.removeChildFromPoint(e);
+		[SVG.DrawingTool.START](e) {
+			SVG.DrawingTool.removeTop(e.point, e.currentTarget);
 		}
 		
-		[SVG.DrawingTool.END](e) {
-			SVG.DrawingTool.removeChildFromPoint(e);
+		[SVG.DrawingTool.DRAW](e) {
+			SVG.DrawingTool.removeTop(e.point, e.currentTarget);
 		}
+		
 	}
 	
 	
@@ -311,32 +367,22 @@ SVG.DrawingTool = class {
 		attr; // SVG.js path's attributes.
 		path; // SVG.js path that's being drawn.
 		svg; // SVG.js factory that makes the path.
-
+		
 		/**
 		 * Makes a PathDrawer.
 		 *
-		 * @param svgFactory Makes nodes. The result of calling SVG()
-		 * @param svgAttributes Attributes of the SVG path element made.
+		 * @param svg Makes nodes. The result of calling SVG().
+		 * @param attr Attributes of the SVG path element made.
 		 */
-		constructor(svgFactory, svgAttributes = {}) {
+		constructor(svg, attr={}) {
 			super();
-			this.attr = svgAttributes;
-			this.svg = svgFactory;
-			this.align = SVG.DrawingTool.alignXYFn(svgFactory.node);
+			this.attr = attr;
+			this.svg = svg;
+			this.align = SVG.DrawingTool.alignXYFn(svg.node);
 		}
 
 		/** Adds/draws points for the middle of a path. */
-		[SVG.DrawingTool.DRAW](e) {
-			if(e.buttons & 32) {
-				// eraser button
-				SVG.DrawingTool.removeChildFromPoint(e);
-				return;
-			}
-			
-			if (!this?.path) {
-				this.drawingStart(this.getPosition(e.init, e.rect));
-			}
-
+		[SVG.DrawingTool.DRAW](e) {			
 			const [x, y] = this.getPosition(e.point, e.rect);
 
 			// Create new point in SVG syntax
@@ -352,19 +398,14 @@ SVG.DrawingTool = class {
 
 		/** Resets state for making a path. */
 		[SVG.DrawingTool.END](e) {
-			if(e.buttons & 32) {
-				// eraser button
-				SVG.DrawingTool.removeChildFromPoint(e);
-			} else if (!this?.path) {
-				this.drawingStart(this.getPosition(e.point, e.rect));
-			}
-			
 			// remove reference to old path
 			this.path = null;
 		}
 
 		/** Creates the path node at the initial point. */
-		drawingStart([x, y]) {
+		[SVG.DrawingTool.START](e) {
+			const [x, y] = this.getPosition(e.init, e.rect);
+			
 			// Initial point and a 0 length line in SVG syntax 
 			// to display the point.
 			const initPoint = "M " + x + " " + y + " l 0 0";
@@ -374,8 +415,12 @@ SVG.DrawingTool = class {
 		}
 
 		/** Scales position with element's bounds and SVG viewBox */
-		getPosition([x, y], rect) {
-			return this.align(x-rect.x, y-rect.y, rect.width, rect.height);
+		getPosition(point, rect) {
+			const snap = ([x, y], snap=10) => {
+				return [(x - x % snap), (y - y % snap)];
+			};
+			
+			return this.align(point, rect);
 		}
 	}
 	
