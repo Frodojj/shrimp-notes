@@ -146,7 +146,7 @@ SVG.DrawingTool = class {
 	}
 	
 	/**
-	 * Makes the details object for the custom event.
+	 * Makes the detail object for the custom event.
 	 * 
 	 * @param node    The currentTarget node where listener is attached.
 	 * @param [x,y]   The current point of the event.
@@ -164,13 +164,10 @@ SVG.DrawingTool = class {
 		};
 	}
 		
-	/** Removes element under point if it's a child of currentTarget. */
-	static removeTop(point, currentTarget) {
+	/** Removes element at point if isn't root but is contained by root. */
+	static removeTop(point, root) {
 		const el = document.elementFromPoint(...point);
-		const t = currentTarget;
-		const isRemovable =
-			(el !== t) && (el.parentNode === t || t.contains(el));
-		if (isRemovable) {
+		if (el !== root && (el.parentNode === root || root.contains(el))) {
 			el.remove();
 		}
 	}
@@ -259,11 +256,6 @@ SVG.DrawingTool = class {
 			["pointerdown", "pointerleave", "pointermove", "pointerup"];
 		static OPTIONS = {capture: false, passive: false};
 		
-		// 01 = binary 000001 bitmask for left-click/pen-tip.
-		// 32 = binary 100000 bitmask for eraser.
-		// 33 = binary 100001 bitmask for left-click | eraser.
-		static VALID_BUTTONS = 33;
-		
 		listeners = []; // The PointerEvent listeners of this PointerTool.
 		pointer = new PointerState(); // state of this PointerTool
 		
@@ -284,9 +276,17 @@ SVG.DrawingTool = class {
 		
 		/** If valid buttons: If primary then sets init else resets state. */
 		pointerdown(e) {
+			console.log(`pointerdown isPrimary: ${e.isPrimary}`);
+			console.log(`pointerdown this.pointer.state: ${this.pointer.state}`);
+			console.log(`pointerdown buttons: ${e.buttons}`);
+			console.log(`pointerdown e:`, e);
+			
+			// 01 = binary 000001 bitmask for left-click/pen-tip.
+			// 32 = binary 100000 bitmask for eraser.
+			// 33 = binary 100001 bitmask for left-click | eraser.
 			// If buttons is not supported (undefined or 0), set it to bitmask
 			// for left-click/pen-tip = 1
-			const buttons = (e.buttons || 1) & PointerTool.VALID_BUTTONS;
+			const buttons = (e.buttons || 1) & 33;
 			if (buttons) {
 				if (e.isPrimary) {
 					this.pointer.init(e.clientX, e.clientY, buttons);
@@ -303,41 +303,50 @@ SVG.DrawingTool = class {
 
 		/** Sets state to MOVING & dispatches DRAW event if state is truthy. */
 		pointermove(e) {
+			console.log(`pointermove isPrimary: ${e.isPrimary}`);
+			console.log(`pointermove this.pointer.state: ${this.pointer.state}`);
+			console.log(`pointermove e:`, e);
 			if (e.isPrimary) {
 				switch(this.pointer.state) {
-					case PointerState.INIT:
+					case PointerState.INIT: {
 						// Dispatching here in case two fingers, cuz second
 						// finger sets state to NONE, but second finger's
 						// pointerdown is fired after primary finger.
-						const se = SVG.DrawingTool.startEvent(e, this.pointer);
-						this.dispatchEvent(se);
+						const ev = SVG.DrawingTool.startEvent(e, this.pointer);
+						this.dispatchEvent(ev);
 						this.pointer.moving();
 						// fall through cuz now moving
-					case PointerState.MOVING:
+					}
+					case PointerState.MOVING: {
 						const ev = SVG.DrawingTool.drawEvent(e, this.pointer);
 						this.dispatchEvent(ev);
+					}
 				}
 			}
 		}
 
 		/** Dispatches END event and sets state to NONE if state is truthy. */
 		pointerup(e) {
+			console.log(`PointerUp isPrimary: ${e.isPrimary}`);
+			console.log(`PointerUp this.pointer.state: ${this.pointer.state}`);
+			console.log(`PointerUp e:`, e);
 			if (e.isPrimary) {
 				switch(this.pointer.state) {
-					case PointerState.INIT:
+					case PointerState.INIT: {
 						// Dispatching here in case two fingers.
-						const se = SVG.DrawingTool.startEvent(e, this.pointer);
-						this.dispatchEvent(se);
+						const ev = SVG.DrawingTool.startEvent(e, this.pointer);
+						this.dispatchEvent(ev);
 						// fall through cuz now done
-					case PointerState.MOVING:
+					}
+					case PointerState.MOVING: {
 						const ev = SVG.DrawingTool.endEvent(e, this.pointer);
 						this.dispatchEvent(ev);
 						this.pointer.reset();
+					}
 				}
 			}
 		}
 	}
-	
 	
 	/** Removes elements under a pointer except for attached element. */
 	class ElementRemover extends SVG.DrawingTool {
