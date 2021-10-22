@@ -76,6 +76,9 @@ class DrawingApp {
 		DrawingApp.validateViewBox(node);
 		
 		this.svg = SVG(node);
+		
+		this.svg.debounce(30);
+		
 		this.svg.panZoom(DrawingApp.VIEW_ZOOM);
 	}
 	
