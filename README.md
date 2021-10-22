@@ -19,6 +19,33 @@ content or the viewPort of the SVG element.
 DrawingApp.validateViewBox(node);
 ```
 
+## Quick Summary
+
+Here is a list of the methods/properties added to the SVG() object:
+
+	- debounce(time)
+		- Sets the time that pointerdown delays before initializing the 
+		  drawing events. This debouncing is handled by PointerTool.
+	- drawingPointer
+		- The PointerTool that adds pointer up/moving/down events to the SVG
+		  object. Dispatches the drawing events.
+	- drawingTool
+		- The tool being used to respond to drawing events.
+	- draw(tool)
+		- Draw with the specified tool.
+	- drawEraser()
+		- Draw with the eraser tool, which erases the element under the mouse
+		  as long as it is the a child of the SVG node.
+	- drawPath(attr = {})
+		- Draw with the path tool, which makes a path.
+	- eraserTool()
+		- Makes an eraser tool but doesn't add it's drawing event.
+	- pathTool(attr = {})
+		- Makes a path tool but doesn't add it's drawing event.
+	- pointerTool({node, time} = {})
+		- Makes a Pointer Tool. If node is not specified, then it's added to 
+		  the SVG node. Time is the debouncing time.
+
 ## Drawing a path.
 
 To start drawing a path on the `node` SVG element use the `drawPath` tool:
@@ -151,6 +178,8 @@ class MyTool extends SVG.DrawingTool {
 	}
 }
 ```
+
+## Parting thought
 
 No matter where you go, there you are. Think about that, and have a good day!
 
