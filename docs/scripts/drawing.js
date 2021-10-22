@@ -259,12 +259,11 @@ SVG.DrawingTool = class {
 		listeners = []; // The PointerEvent listeners of this PointerTool.
 		pointer = new PointerState(); // state of this PointerTool
 		timeout = null; // state of the timeout
-		debounceTime = 75; // debounce Time between touching and registering.
+		debounceTime = 30; // Time between touching and pointerdown init.
 		
 		/** Attaches to node if it exists. */
-		constructor(node, debounceTime = 75) {
-			// Time between touching and down event initializing.
-			this.debounceTime = debounceTime;
+		constructor(node, debounceTime) {
+			if (debounceTime) this.debounceTime = debounceTime;
 		
 			// Add all event listeners to this.listeners and to node.
 			for (const n of PointerTool.NAMES) {
@@ -433,6 +432,14 @@ SVG.DrawingTool = class {
 	
 	// Add draw function to SVG.js
 	svg.extend(svg.Svg, {
+		debounce(time) {
+			if (this.drawingPointer) {
+				this.drawingPointer.debounceTime = time;
+			} else {
+				this.drawingPointer = this.pointerTool({time: time});
+			}
+			return this;
+		},
 		drawingPointer: null,
 		drawingTool: null,
 		draw(tool) {
@@ -463,13 +470,6 @@ SVG.DrawingTool = class {
 		},
 		pointerTool({node, time} = {}) {
 			return new PointerTool(node ?? this.node, time);
-		},
-		debounce(time) {
-			if (this.drawingPointer) {
-				this.drawingPointer.debounceTime = time;
-			} else {
-				this.drawingPointer = this.pointerTool({time: time});
-			}
 		}
 	});
 })(SVG);
