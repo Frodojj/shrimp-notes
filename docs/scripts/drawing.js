@@ -258,6 +258,8 @@ SVG.DrawingTool = class {
 		
 		listeners = []; // The PointerEvent listeners of this PointerTool.
 		pointer = new PointerState(); // state of this PointerTool
+		timeout = null;
+		waitTime = 75;
 		
 		/** Attaches to node if it exists. */
 		constructor(node) {			
@@ -276,10 +278,12 @@ SVG.DrawingTool = class {
 		
 		/** If valid buttons: If primary then sets init else resets state. */
 		pointerdown(e) {
-			console.log(`pointerdown isPrimary: ${e.isPrimary}`);
-			console.log(`pointerdown this.pointer.state: ${this.pointer.state}`);
-			console.log(`pointerdown buttons: ${e.buttons}`);
-			console.log(`pointerdown e:`, e);
+			console.log(
+				`pointermove isPrimary: ${e.isPrimary}\n`,
+				`pointermove this.pointer.state: ${this.pointer.state}\n`,
+				`pointermove this.timeout: ${this.timeout}\n`,
+				`pointermove e:`, e
+			);
 			
 			// 01 = binary 000001 bitmask for left-click/pen-tip.
 			// 32 = binary 100000 bitmask for eraser.
@@ -289,8 +293,18 @@ SVG.DrawingTool = class {
 			const buttons = (e.buttons || 1) & 33;
 			if (buttons) {
 				if (e.isPrimary) {
-					this.pointer.init(e.clientX, e.clientY, buttons);
+					// Debounce so two fingers doesn't trigger.
+					clearTimeout(this.timeout); // Reset clock
+					this.timeout = setTimeout(() => {
+						if (this.timeout) {
+							this.pointer.init(e.clientX, e.clientY, buttons);
+						}
+						this.timeout = null;
+						
+					}, this.waitTime);
+					
 				} else {
+					this.timeout = null;
 					this.pointer.reset();
 				}
 			}
@@ -303,23 +317,30 @@ SVG.DrawingTool = class {
 
 		/** Sets state to MOVING & dispatches DRAW event if state is truthy. */
 		pointermove(e) {
-			console.log(`pointermove isPrimary: ${e.isPrimary}`);
-			console.log(`pointermove this.pointer.state: ${this.pointer.state}`);
-			console.log(`pointermove e:`, e);
+			if(this.pointer.state == PointerState.INIT) {
+				console.log(
+					`pointermove isPrimary: ${e.isPrimary}\n`,
+					`pointermove this.pointer.state: ${this.pointer.state}\n`,
+					`pointermove this.timeout: ${this.timeout}\n`,
+					`pointermove e:`, e
+				);
+			}
 			if (e.isPrimary) {
 				switch(this.pointer.state) {
 					case PointerState.INIT: {
 						// Dispatching here in case two fingers, cuz second
 						// finger sets state to NONE, but second finger's
 						// pointerdown is fired after primary finger.
-						const ev = SVG.DrawingTool.startEvent(e, this.pointer);
-						this.dispatchEvent(ev);
+						this.dispatchEvent(
+							SVG.DrawingTool.startEvent(e, this.pointer)
+						);
 						this.pointer.moving();
-						// fall through cuz now moving
+						// fall through cuz now done
 					}
 					case PointerState.MOVING: {
-						const ev = SVG.DrawingTool.drawEvent(e, this.pointer);
-						this.dispatchEvent(ev);
+						this.dispatchEvent(
+							SVG.DrawingTool.drawEvent(e, this.pointer)
+						);
 					}
 				}
 			}
@@ -327,20 +348,25 @@ SVG.DrawingTool = class {
 
 		/** Dispatches END event and sets state to NONE if state is truthy. */
 		pointerup(e) {
-			console.log(`PointerUp isPrimary: ${e.isPrimary}`);
-			console.log(`PointerUp this.pointer.state: ${this.pointer.state}`);
-			console.log(`PointerUp e:`, e);
+			console.log(
+				`pointermove isPrimary: ${e.isPrimary}\n`,
+				`pointermove this.pointer.state: ${this.pointer.state}\n`,
+				`pointermove this.timeout: ${this.timeout}\n`,
+				`pointermove e:`, e
+			);
 			if (e.isPrimary) {
 				switch(this.pointer.state) {
 					case PointerState.INIT: {
 						// Dispatching here in case two fingers.
-						const ev = SVG.DrawingTool.startEvent(e, this.pointer);
-						this.dispatchEvent(ev);
+						this.dispatchEvent(
+							SVG.DrawingTool.startEvent(e, this.pointer)
+						);
 						// fall through cuz now done
 					}
 					case PointerState.MOVING: {
-						const ev = SVG.DrawingTool.endEvent(e, this.pointer);
-						this.dispatchEvent(ev);
+						this.dispatchEvent(
+							SVG.DrawingTool.endEvent(e, this.pointer)
+						);
 						this.pointer.reset();
 					}
 				}
