@@ -4,7 +4,6 @@
  * MIT License
  */
 
-
 /** Represents a Tool that you draw with. Uses custom events. */
 SVG.DrawingTool = class {
 	/** Event invoked while drawing. */
@@ -249,7 +248,6 @@ SVG.DrawingTool = class {
 		}
 	}
 	
-	
 	/** Dispatches SVG.DrawingTool events with PointerEvents. */
 	class PointerTool {
 		static NAMES =
@@ -365,7 +363,6 @@ SVG.DrawingTool = class {
 		
 	}
 	
-	
 	/** Creates SVG paths from a SVG.js factory. */
 	class PathDrawer extends SVG.DrawingTool {
 		align; // Function that aligns coordinates from viewPort to viewBox.
@@ -428,7 +425,6 @@ SVG.DrawingTool = class {
 			return this.align(point, rect);
 		}
 	}
-	
 	
 	// Add draw function to SVG.js
 	svg.extend(svg.Svg, {
