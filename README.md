@@ -96,7 +96,7 @@ To make a new tool, create an object with methods named the appropriate
 event to listen to. The names are part of SVG.DrawingTool. For example:
 
 ```
-myTool = {
+const myTool = {
 	[SVG.DrawingTool.START](d) {
 		// Do Stuff
 	},
@@ -108,7 +108,7 @@ myTool = {
 	[SVG.DrawingTool.END](d) {
 		// Do Stuff
 	}
-}
+};
 
 svg.draw(myTool);
 ```
