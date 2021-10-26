@@ -188,6 +188,28 @@ svg.draw(new MyTool(svg));
 
 ```
 
+Two classes come with the distribution:
+
+- SVG.RemoverTool
+	- Erases element under pointer.
+
+- SVG.PathTool
+	- Draws a path element.
+	- constructor(svg, attr={})
+		- svg is the SVG() factory. attr object has the attributes of the path.
+
+Example use:
+
+```
+\\ same as svg.drawEraser()
+svg.draw(new SVG.RemoverTool());
+
+
+\\ same as svg.drawPath(attr);
+svg.draw(new SVG.PathTool(svg, attr));
+
+```
+
 ## Parting thought
 
 No matter where you go, there you are. Think about that, and have a good day!
