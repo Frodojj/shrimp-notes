@@ -1,6 +1,6 @@
 /*
  * Jimmy Cerra
- * 18 Oct. 2021
+ * 26 Oct. 2021
  * MIT License
  */
 
@@ -155,6 +155,14 @@ window.addEventListener("load", function(ev) {
 	const node = document.querySelector("main svg");
 	const app = new DrawingApp(node);
 	const state = new DrawingAttributes();
+	/*
+	const logObserver = new MutationObserver(([{target}]) => {
+		console.log('viewBox: ', target.viewBox.baseVal);
+	});
+	
+	logObserver.observe(node, {attributeFilter: ["viewBox"]});
+	*/
+	
 	
 	// Helper to add an EventListener to nodes by selector.
 	const addListener = function(selector, listener, events = ["input"]) {
