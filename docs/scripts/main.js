@@ -100,7 +100,7 @@ class DrawingApp {
 
 
 /** Takes care of attributes object state for app. */
-class DrawingAttributes {
+class PathAttributes {
 	attrsMap = new Map();          // Map of names with path attributes.
 	defaultPath = DrawingApp.PATH; // Default path copied.
 	widths = [1, 2, 3, 5, 10, 20]; // Possible width values.
@@ -154,7 +154,7 @@ class DrawingAttributes {
 window.addEventListener("load", function(ev) {
 	const node = document.querySelector("main svg");
 	const app = new DrawingApp(node);
-	const state = new DrawingAttributes();
+	const state = new PathAttributes();
 	/*
 	const logObserver = new MutationObserver(([{target}]) => {
 		console.log('viewBox: ', target.viewBox.baseVal);
