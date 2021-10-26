@@ -45,7 +45,7 @@ const svg = SVG(node);
 svg.drawPath(attr);
 ```
 
-The parameter `attr` constains an object with the attributes for the new path.
+The parameter `attr` contains an object with the attributes for the new path.
 For example:
 
 ```
@@ -93,22 +93,22 @@ svg.draw(tool);
 ## Creating an arbitrary tool.
 
 To make a new tool, create an object with methods named the appropriate 
-event to listen to. The names are part of SVG.DrawingTool. For example:
+event to listen to. The names are part of SVG.Drawing. For example:
 
 ```
 const myTool = {
-	[SVG.DrawingTool.START](d) {
+	[SVG.Drawing.START](d) {
 		// Do Stuff
 	},
 
-	[SVG.DrawingTool.DRAW](d) {
+	[SVG.Drawing.DRAW](d) {
 		// Do Stuff
 	},
 	
-	[SVG.DrawingTool.END](d) {
+	[SVG.Drawing.END](d) {
 		// Do Stuff
 	}
-};
+}
 
 svg.draw(myTool);
 ```
@@ -126,10 +126,10 @@ properties:
 - rect:
 	- The result of currentTarget.getBoundingClientRect().
 
-The object `SVG.DrawingTool` contains convenience functions to help making a
+The object `SVG.Drawing` contains convenience functions to help making a
 drawing tool easier:
  
-- SVG.DrawingTool
+- SVG.Drawing
 	- START
 		- Represents the custom event that drawing starts.
 	- DRAW
@@ -159,27 +159,26 @@ drawing tool easier:
 		  is not the element and node contains the element.
 
 The function `alignXYFn` is probably the most important. It translates points
-from the details parameter to points in the SVG document. You can use it like
-so:
+from the details parameter to points in the SVG document. Here is an example:
 
 ```
 class MyTool {
 	constructor(svg) {
 		this.svg = svg;
-		this.align = SVG.DrawingTool.alignXYFn(svg.node);
+		this.align = SVG.Drawing.alignXYFn(svg.node);
 	}
 	
-	[SVG.DrawingTool.START](d) {
+	[SVG.Drawing.START](d) {
 		const [x, y] = this.align(d.point, d.rect);
 		// Do Stuff with x, y coordinates
 	}
 
-	[SVG.DrawingTool.DRAW](d) {
+	[SVG.Drawing.DRAW](d) {
 		const [x, y] = this.align(d.point, d.rect);
 		// Do Stuff with x, y coordinates
 	}
 	
-	[SVG.DrawingTool.END](d) {
+	[SVG.Drawing.END](d) {
 		const [x, y] = this.align(d.point, d.rect);
 		// Do Stuff with x, y coordinates
 	}
