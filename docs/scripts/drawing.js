@@ -4,7 +4,7 @@
  * MIT License
  */
 
-SVG.DrawingTool = {
+SVG.Drawing = {
 	DRAW: "drawing", // Event invoked while drawing.
 	END: "drawingend", // Event invoked when drawing is finished.
 	ERASER_MASK: 32, // Mask for eraser. See MouseEvent.buttons
@@ -249,23 +249,18 @@ SVG.DrawingTool = {
 
 /** Removes elements under a pointer except for attached element. */
 SVG.RemoverTool = class RemoverTool {
-	[SVG.DrawingTool.START](d) {
-		SVG.DrawingTool.removeFromPoint(d.point, d.node);
+	[SVG.Drawing.START](d) {
+		SVG.Drawing.removeFromPoint(d.point, d.node);
 	}
 	
-	[SVG.DrawingTool.DRAW](d) {
-		SVG.DrawingTool.removeFromPoint(d.point, d.node);
+	[SVG.Drawing.DRAW](d) {
+		SVG.Drawing.removeFromPoint(d.point, d.node);
 	}
 };
 
 
 /** Creates SVG paths from a SVG.js factory. */
 SVG.PathTool = class PathTool {
-	align; // Function that aligns coordinates from viewPort to viewBox.
-	attr; // SVG.js path's attributes.
-	path; // SVG.js path that's being drawn.
-	svg; // SVG.js factory that makes the path.
-	
 	/**
 	 * Makes a PathDrawer.
 	 *
@@ -273,14 +268,22 @@ SVG.PathTool = class PathTool {
 	 * @param attr Attributes of the SVG path element made.
 	 */
 	constructor(svg, attr={}) {
+		// SVG.js path's attributes.
 		this.attr = attr;
+		
+		// SVG.js factory that makes the path.
 		this.svg = svg;
-		this.align = SVG.DrawingTool.alignXYFn(svg.node);
+		
+		// Function that aligns coordinates from viewPort to viewBox.
+		this.align = SVG.Drawing.alignXYFn(svg.node);
+		
+		// SVG.js path that's being drawn.
+		this.path = null;
 	}
 
 	/** Adds/draws points for the middle of a path. */
-	[SVG.DrawingTool.DRAW](d) {			
-		const [x, y] = this.getPosition(d.point, d.rect);
+	[SVG.Drawing.DRAW](d) {			
+		const [x, y] = this.align(d.point, d.rect);
 
 		// Create new point in SVG syntax
 		const newPoint = "L " + x + " " + y;
@@ -294,14 +297,14 @@ SVG.PathTool = class PathTool {
 	}
 
 	/** Resets state for making a path. */
-	[SVG.DrawingTool.END](d) {
+	[SVG.Drawing.END](d) {
 		// remove reference to old path
 		this.path = null;
 	}
 
 	/** Creates the path node at the initial point. */
-	[SVG.DrawingTool.START](d) {
-		const [x, y] = this.getPosition(d.point, d.rect);
+	[SVG.Drawing.START](d) {
+		const [x, y] = this.align(d.point, d.rect);
 		
 		// Initial point and a 0 length line in SVG syntax 
 		// to display the point.
@@ -310,22 +313,13 @@ SVG.PathTool = class PathTool {
 		// Draw the SVG path and return it.
 		this.path = this.svg.path(initPoint).attr(this.attr);
 	}
-
-	/** Scales position with element's bounds and SVG viewBox */
-	getPosition(point, rect) {
-		const snap = ([x, y], snap=10) => {
-			return [(x - x % snap), (y - y % snap)];
-		};
-		
-		return this.align(point, rect);
-	}
 };
 
 
 // Add draw function to SVG.js
 SVG.extend(SVG.Svg, {
 	draw(tool) {
-		const DT = SVG.DrawingTool;
+		const DT = SVG.Drawing;
 		
 		if (!this.drawingDispatchers) {
 			// Lazy creation of Dispatcher for Drawing Events
