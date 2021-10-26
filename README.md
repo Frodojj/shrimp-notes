@@ -107,8 +107,10 @@ myTool = {
 	
 	[SVG.DrawingTool.END](d) {
 		// Do Stuff
-	},
+	}
 }
+
+svg.draw(myTool);
 ```
 
 The parameter `d` contains details about the event with the following
