@@ -23,28 +23,18 @@ DrawingApp.validateViewBox(node);
 
 Here is a list of the methods/properties added to the SVG() object:
 
-	- debounce(time)
-		- Sets the time that pointerdown delays before initializing the 
-		  drawing events. This debouncing is handled by PointerTool.
-	- drawingPointer
-		- The PointerTool that adds pointer up/moving/down events to the SVG
-		  object. Dispatches the drawing events.
-	- drawingTool
-		- The tool being used to respond to drawing events.
-	- draw(tool)
-		- Draw with the specified tool.
-	- drawEraser()
-		- Draw with the eraser tool, which erases the element under the mouse
-		  as long as it is the a child of the SVG node.
-	- drawPath(attr = {})
-		- Draw with the path tool, which makes a path.
-	- eraserTool()
-		- Makes an eraser tool but doesn't add it's drawing event.
-	- pathTool(attr = {})
-		- Makes a path tool but doesn't add it's drawing event.
-	- pointerTool({node, time} = {})
-		- Makes a Pointer Tool. If node is not specified, then it's added to 
-		  the SVG node. Time is the debouncing time.
+- drawingDispatchers
+	- Array of the PointerEvent listener parameter arrays that dispatch the
+	  drawing events.
+- draw(tool)
+	- Removes old tool's event listeners and draw with the specified tool. If 
+	  drawingDispatchers is falsy, first creates new dispatchers on the node.
+	  If tool is falsy, just removes old tool's event listener.
+- drawEraser()
+	- Draw with the eraser tool, which erases the element under the mouse
+	  as long as it is the a child of the SVG node.
+- drawPath(attr = {})
+	- Draw with the path tool, which makes a path.
 
 ## Drawing a path.
 
@@ -69,9 +59,6 @@ const attr = {
 
 Note: When a tool is added for the first time, event handlers for pointer
 events are added to the `node` SVG element. The next time they are reused.
-To make he pointer event handlers without attaching them, just call
-`svg.drawPointer()`. The parameters for `addEventListener()` or
-`removeEventListener()` are the items of the `listeners` array.
 
 ## Erasing.
 
@@ -105,78 +92,100 @@ svg.draw(tool);
 
 ## Creating an arbitrary tool.
 
-To make a new tool, extend `SVG.DrawingTool`. You can find it's specification
-below:
+To make a new tool, create an object with methods named the appropriate 
+event to listen to. The names are part of SVG.DrawingTool. For example:
 
-- SVG.DrawingTool
-	- static START
-		- Represents the custom event that drawing starts.
-	- static DRAW
-		- Represents the custom event that drawing is ongoing.
-    - static END
-		- Represents the custom event that drawing ends.
-	- static NAMES
-		- Array of event handler names to register.
-    - static alignXYFn(node): fn(x, y, width, height): \[x, y]
-		- Higher order function that returns another function that transforms
-		  coordinates in the element (with width/height of the bounding box)
-		  to coordinates in the SVG node's viewBox.
-	- static clientEvent(name, e, init)
-		- Convenience function that makes a custom event at clientX/Y.
-	- static drawEvent(e, {buttons, point})
-		- Convenience function that makes a custom DRAW event.
-	- static endEvent(e, {buttons, point})
-		- Convenience function that makes a custom END event.
-	- static eventDetail(node, \[x, y], {buttons, point})
-		- Makes detail objects for the custom event.
-	- static removeTop(point, root)
-		- Removes element at point if isn't root but is contained by root.
-	- static startEvent(e, init)
-		- Convenience function to make a custom START event.
-	- listeners
-		- Array of parameters applied to add/removeEventListener.
-	- addTo(node)
-		- Adds all event listeners to node.
-	- removeFrom(node)
-		- Removes all event listeners from node.
+```
+myTool = {
+	[SVG.DrawingTool.START](d) {
+		// Do Stuff
+	},
 
-Basically, you extend this class and write methods that call the Events. The
-detail parameter `e` contains the following properties:
+	[SVG.DrawingTool.DRAW](d) {
+		// Do Stuff
+	},
+	
+	[SVG.DrawingTool.END](d) {
+		// Do Stuff
+	},
+}
+```
+
+The parameter `d` contains details about the event with the following
+properties:
 
 - buttons
 	- MouseEvent.buttons or 1 (mask for main button) if buttons is unsupported
-- currentTarget
+- node
 	- currentTarget for the event. Usually should be the svg element node that
 	  the events are attached to.
-- init: \[x, y]
-	- Initial point where pointerdown happened.
 - point: \[clientX, clientY]
-	- The point of the current move or end event.
+	- The point of the current event.
 - rect:
 	- The result of currentTarget.getBoundingClientRect().
 
-The method `[SVG.DrawingTool.DRAW]` is called when the drawing has started, for
-example when the pointer move happens. `[SVG.DrawingTool.END]` is called when 
-pointer out or pointer leave happens. The down event is triggers
-`[SVG.DrawingTool.START]`, but is not initiated until the next pointer move or
-pointer up/leave event. It is done this way so as not to interfere with
-multi-finger events (like zoom or pan). See the code to `PathDrawer` in
-drawing.js for an example. Here's a short summary:
+The object `SVG.DrawingTool` contains convenience functions to help making a
+drawing tool easier:
+ 
+- SVG.DrawingTool
+	- START
+		- Represents the custom event that drawing starts.
+	- DRAW
+		- Represents the custom event that drawing is ongoing.
+    - END
+		- Represents the custom event that drawing ends.
+	- NAMES
+		- The array: `[START, DRAW, END].
+	- ERASER_MASK
+		- 32 (the mask for an eraser) + 1 (primary pointer mask) = 33.
+    - alignXYFn(node): fn(\[x, y], {left, top, width, height}): \[x, y]
+		- Higher order function that returns another function that transforms
+		  coordinates in the element (with rect of the bounding box) to
+		  coordinates in the SVG node's viewBox.
+	- dispatchers(start, move, end, debounce = 50, buttonsMask = 33)
+		- Makes PointerEvent listeners that dispatch custom events named the
+		  values of start, move, end. Debounce is the time between the down
+		  event firing and the start event being dispatched if no more than
+		  one finger was detected. buttonsMask is the mask of a valid button.
+		  See MouseEvent.buttons for more info. If MouseEvent.buttons is not
+		  supported, 1 (primary pointer) is used.
+	- listeners(tool)
+		- Makes drawing tool listeners from tool's methods with the same names
+		  as the values of START, DRAW, and END>
+	- removeFromPoint(point, node)
+		- Convenience function that removes and element at point if node
+		  is not the element and node contains the element.
+
+The function `alignXYFn` is probably the most important. It translates points
+from the details parameter to points in the SVG document. You can use it like
+so:
 
 ```
-class MyTool extends SVG.DrawingTool {
-	[SVG.DrawingTool.START](e) {
-		// Do Stuff
-	}
-
-	[SVG.DrawingTool.DRAW](e) {
-		// Do Stuff
+class MyTool {
+	constructor(svg) {
+		this.svg = svg;
+		this.align = SVG.DrawingTool.alignXYFn(svg.node);
 	}
 	
-	[SVG.DrawingTool.END](e) {
-		// Do Stuff
+	[SVG.DrawingTool.START](d) {
+		const [x, y] = this.align(d.point, d.rect);
+		// Do Stuff with x, y coordinates
+	}
+
+	[SVG.DrawingTool.DRAW](d) {
+		const [x, y] = this.align(d.point, d.rect);
+		// Do Stuff with x, y coordinates
+	}
+	
+	[SVG.DrawingTool.END](d) {
+		const [x, y] = this.align(d.point, d.rect);
+		// Do Stuff with x, y coordinates
 	}
 }
+
+const svg = SVG(node);
+svg.draw(new MyTool(svg));
+
 ```
 
 ## Parting thought
