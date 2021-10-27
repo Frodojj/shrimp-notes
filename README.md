@@ -137,7 +137,7 @@ drawing tool easier:
     - END
 		- Name of the custom event when drawing ends.
 	- NAMES
-		- The array: '[START, DRAW, END].
+		- The array: \[START, DRAW, END].
 	- ERASER_MASK
 		- 32 (the mask for an eraser) + 1 (primary pointer mask) = 33.
     - alignXYFn(node): fn(\[x, y], {left, top, width, height}): \[x, y]
