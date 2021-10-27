@@ -63,7 +63,7 @@ events are added to the `node` SVG element. The next time they are reused.
 ## Erasing.
 
 If you're using a drawing pen, you can use the eraser to remove the top shape.
-Or you can use the `erase` tool to do the same thing:
+Or you can use the `erase` tool to do the same thing with the pen tip:
 
 ```
 svg.drawEraser();
@@ -100,7 +100,7 @@ const myTool = {
 	[SVG.Drawing.START](d) {
 		// Do Stuff
 	},
-
+	
 	[SVG.Drawing.DRAW](d) {
 		// Do Stuff
 	},
@@ -153,7 +153,7 @@ drawing tool easier:
 		  supported, 1 (primary pointer) is used.
 	- listeners(tool)
 		- Makes drawing tool listeners from tool's methods with the same names
-		  as the values of START, DRAW, and END>
+		  as the values of START, DRAW, and END.
 	- removeFromPoint(point, node)
 		- Convenience function that removes and element at point if node
 		  is not the element and node contains the element.
@@ -172,7 +172,7 @@ class MyTool {
 		const [x, y] = this.align(d.point, d.rect);
 		// Do Stuff with x, y coordinates
 	}
-
+	
 	[SVG.Drawing.DRAW](d) {
 		const [x, y] = this.align(d.point, d.rect);
 		// Do Stuff with x, y coordinates
@@ -189,10 +189,27 @@ svg.draw(new MyTool(svg));
 
 ```
 
-Two classes come with the distribution:
+To make dispatchers for drawing events, you can simply pass `NAMES` to
+`dispatchers()` like so:
 
-- SVG.RemoverTool
-	- Erases element under pointer.
+```
+const DT = SVG.Drawing;
+const dispatchers = DT.dispatchers(...DT.NAMES);
+```
+
+To add `dispatchers()` or `listeners()` events simply add each item in the
+resulting array to the node's event listener:
+
+```
+dispatchers.forEach((d) => svg.on(...d));
+
+// or for example:
+
+for(const d of dispatchers)
+	node.addEventListener(...d);
+```
+
+One class come with the distribution:
 
 - SVG.PathTool
 	- Draws a path element.
@@ -202,9 +219,6 @@ Two classes come with the distribution:
 Example use:
 
 ```
-\\ same as svg.drawEraser()
-svg.draw(new SVG.RemoverTool());
-
 
 \\ same as svg.drawPath(attr);
 svg.draw(new SVG.PathTool(svg, attr));
