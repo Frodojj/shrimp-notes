@@ -1,6 +1,6 @@
 /*
  * Jimmy Cerra
- * 26 Oct. 2021
+ * 27 Oct. 2021
  * MIT License
  */
 
@@ -237,7 +237,7 @@ SVG.Drawing = {
 		];
 	},
 	
-	/** Removes element from point if isn't descends from node. */
+	/** Removes element from point if descendant of node. */
 	removeFromPoint(point, node) {
 		const el = document.elementFromPoint(...point);
 		if (el !== node && (el.parentNode === node || node.contains(el))) {
@@ -247,22 +247,10 @@ SVG.Drawing = {
 };
 
 
-/** Removes elements under a pointer except for attached element. */
-SVG.RemoverTool = class RemoverTool {
-	[SVG.Drawing.START](d) {
-		SVG.Drawing.removeFromPoint(d.point, d.node);
-	}
-	
-	[SVG.Drawing.DRAW](d) {
-		SVG.Drawing.removeFromPoint(d.point, d.node);
-	}
-};
-
-
 /** Creates SVG paths from a SVG.js factory. */
 SVG.PathTool = class PathTool {
 	/**
-	 * Makes a PathDrawer.
+	 * Makes a Path.
 	 *
 	 * @param svg Makes nodes. The result of calling SVG().
 	 * @param attr Attributes of the SVG path element made.
@@ -298,7 +286,7 @@ SVG.PathTool = class PathTool {
 
 	/** Resets state for making a path. */
 	[SVG.Drawing.END](d) {
-		// remove reference to old path
+		// remove reference so no chance of modifying old path.
 		this.path = null;
 	}
 
@@ -343,7 +331,18 @@ SVG.extend(SVG.Svg, {
 		return this;
 	},
 	drawEraser() {
-		return this.draw(new SVG.RemoverTool());
+		// Removes elements under a pointer except for attached element.
+		const removerTool = {
+			[SVG.Drawing.START](d) {
+				SVG.Drawing.removeFromPoint(d.point, d.node);
+			},
+			
+			[SVG.Drawing.DRAW](d) {
+				SVG.Drawing.removeFromPoint(d.point, d.node);
+			}
+		};
+		
+		return this.draw(removerTool);
 	},
 	drawPath(attr = {}) {
 		return this.draw(new SVG.PathTool(this, attr));
