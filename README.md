@@ -131,13 +131,13 @@ drawing tool easier:
  
 - SVG.Drawing
 	- START
-		- Represents the custom event that drawing starts.
+		- Name of the custom event when drawing starts.
 	- DRAW
-		- Represents the custom event that drawing is ongoing.
+		- Name of the custom event when drawing is ongoing.
     - END
-		- Represents the custom event that drawing ends.
+		- Name of the custom event when drawing ends.
 	- NAMES
-		- The array: `[START, DRAW, END].
+		- The array: '[START, DRAW, END].
 	- ERASER_MASK
 		- 32 (the mask for an eraser) + 1 (primary pointer mask) = 33.
     - alignXYFn(node): fn(\[x, y], {left, top, width, height}): \[x, y]
