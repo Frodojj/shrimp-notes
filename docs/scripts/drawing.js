@@ -29,7 +29,7 @@ SVG.Drawing = {
 	alignXYFn(node) {
 		const box = node.viewBox.baseVal;
 		const fit = node.preserveAspectRatio.baseVal;
-
+		
 		// SVG algorithms for scaling down or up.
 		const scaleDown = (width, height) => {
 			const xScale = box.width / width;
@@ -114,6 +114,14 @@ SVG.Drawing = {
 			case fit.SVG_PRESERVEASPECTRATIO_XMIDYMID:
 			default:
 				return alignFn(xMid, yMid);
+		}
+	},
+	
+	/** Returns the element from point if it's a child of node. */
+	childFromPoint(point, node) {
+		const el = document.elementFromPoint(...point);
+		if (el !== node && (el.parentNode === node || node.contains(el))) {
+			return el;
 		}
 	},
 	
@@ -239,10 +247,7 @@ SVG.Drawing = {
 	
 	/** Removes element from point if descendant of node. */
 	removeFromPoint(point, node) {
-		const el = document.elementFromPoint(...point);
-		if (el !== node && (el.parentNode === node || node.contains(el))) {
-			el.remove();
-		}
+		this.childFromPoint(point, node)?.remove();
 	}
 };
 

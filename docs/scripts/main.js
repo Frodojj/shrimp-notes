@@ -1,14 +1,122 @@
 /*
  * Jimmy Cerra
- * 26 Oct. 2021
+ * 31 Oct. 2021
  * MIT License
  */
 
+/** Drawing tool that can select shapes to move them. */
+class MoveTool {
+	static FILL = {color: "grey", opacity: "0.5"};
+	
+	constructor(svg) {
+		// The SVG.js factory/document.
+		this.svg = svg;
+		
+		// Function that aligns coordinates from viewPort to viewBox.
+		this.align = SVG.Drawing.alignXYFn(svg.node);
+		
+		// The selection that's being transformed.
+		this.reset();
+	}
+	
+	[SVG.Drawing.START](d) {
+		const el = SVG.Drawing.childFromPoint(d.point, d.node);
+		
+		// Stop transforming when pointer down under empty space.
+		if (!el) {
+			this.unSelect();
+			return; // all done.
+		}
+		
+		// Don't do anything if already selected or selecting background.
+		const isSelected = el === this.shape?.node || el === this.bg?.node;
+			
+		if (!isSelected) {
+			// Remove selection if one is already selected.
+			if (this.group) {
+				this.unSelect();
+			}
+			
+			// Get the SVG.js representation.
+			const shape = SVG(el);
+			
+			// Dimensions of the background box.
+			const size = Number(el.getAttribute("stroke-width"));
+			const bgW = shape.width() + size;
+			const bgH = shape.height() + size;
+			const bgX = shape.x() - size/2;
+			const bgY = shape.y() - size/2;
+			const bgFill = MoveTool.FILL;
+			const bgTrans = shape.transform();
+			
+			// Group for the shape and background.
+			// Selected shape will be brought to front
+			// (last child of svg element).
+			const group = this.svg.group();
+			
+			// Background goes in first to be behind selected shape.
+			const background = group.rect(bgW, bgH)
+				.move(bgX, bgY)
+				.fill(bgFill)
+				.transform(bgTrans);
+			
+			// Put selected shape into the group now.
+			group.add(shape);
+			
+			// Keep a reference to the shape to resize or move it.
+			this.group = group;
+			this.bg = background;
+			this.shape = shape;
+		}
+		
+		const point = this.align(d.point, d.rect);
+		const x = point[0] - this.shape.x();
+		const y = point[1] - this.shape.y();
+		this.offset = [x, y];
+	}
+	
+	[SVG.Drawing.DRAW](d) {
+		// Don't do anything if nothing is selected.
+		if (!this.group) {
+			return;
+		}
+		
+		// move drawing to new position.
+		const point = this.align(d.point, d.rect);
+		const x = point[0] - this.offset[0];
+		const y = point[1] - this.offset[1];
+		this.group.move(x, y);
+	}
+	
+	[SVG.Drawing.END](d) {
+	}
+	
+	/** Nulls references to the group, background, and shape selected. */
+	reset() {
+		this.group = null;
+		this.bg = null;
+		this.shape = null;
+		this.offset = [];
+	}
+	
+	/** Unselects shape. */
+	unSelect() {
+		if (this.group) {
+			// Flatten group.
+			this.group.ungroup();
+			
+			// Remove background.
+			this.bg.remove();
+		}
+		this.reset();
+	}
+};
+
 
 /**
- * Sample app that uses drawing.js classes. Controls which events are attached
+ * Sample that uses drawing.js classes. Controls which events are attached
  * to the svg node and the parameters for those events. */
-class DrawingApp {
+class Sketch {
 	/** Default SVG attributes of path element drawn. */
 	static PATH = {
 		"fill": "none",
@@ -21,8 +129,9 @@ class DrawingApp {
 	static TOOL_ZOOM = {
 		oneFingerPan: false, // Use two fingers instead.
 		panButton: 1, // mouse middle-click.
+		zoomFactor: 0.25,
 		zoomMax: 8,
-		zoomMin: 1/16
+		zoomMin: 1/8
 	};
 	
 	/** View "Finger" mode Pan and Zoom settings. */
@@ -67,34 +176,46 @@ class DrawingApp {
 			node.setAttribute("viewBox", `${x} ${y} ${w} ${h}`);
 		}
 	}
-	
-	svg; // Factory that makes SVG elements from SVG.js.
-	
+		
 	/** The node is the SVG Element. */
 	constructor(node) {
 		// Make sure has a good viewBox.
-		DrawingApp.validateViewBox(node);
+		Sketch.validateViewBox(node);
 		
-		this.svg = SVG(node);		
-		this.svg.panZoom(DrawingApp.VIEW_ZOOM);
+		// Factory that makes SVG elements from SVG.js.
+		this.svg = SVG(node);
+		
+		// Tool for selecting and editing shapes.
+		this.transformer = new MoveTool(this.svg);
+		
+		// Initial state: no tool but zoom/pan.
+		this.panZoom();
 	}
 	
 	/** Sets tool to draw with a SVG path element. */
-	addPath(attr = DrawingApp.PATH) {
-		this.svg.drawPath(attr);
-		this.svg.panZoom(DrawingApp.TOOL_ZOOM);
+	addPath(attr = Sketch.PATH) {
+		this.transformer.unSelect();
+		this.svg.drawPath(attr).panZoom(Sketch.TOOL_ZOOM);
+		
 	}
 	
-	/** Sets zoom attributes to VIEW_ZOOM */
+	/** Removes tool and sets zoom attributes to VIEW_ZOOM */
 	panZoom() {
-		this.svg.draw(false);
-		this.svg.panZoom(DrawingApp.VIEW_ZOOM);
+		this.transformer.unSelect();
+		this.svg.draw(false).panZoom(Sketch.VIEW_ZOOM);
+		
 	}
 	
 	/** Sets tool to remove element under it. */
 	removeShape() {
-		this.svg.drawEraser();
-		this.svg.panZoom(DrawingApp.TOOL_ZOOM);
+		this.transformer.unSelect();
+		this.svg.drawEraser().panZoom(Sketch.TOOL_ZOOM);
+		
+	}
+	
+	editShape() {
+		const tool = this.transformer;
+		this.svg.draw(tool).panZoom(Sketch.TOOL_ZOOM);
 	}
 }
 
@@ -102,7 +223,7 @@ class DrawingApp {
 /** Takes care of attributes object state for app. */
 class PathAttributes {
 	attrsMap = new Map();          // Map of names with path attributes.
-	defaultPath = DrawingApp.PATH; // Default path copied.
+	defaultPath = Sketch.PATH; // Default path copied.
 	widths = [1, 2, 3, 5, 10, 20]; // Possible width values.
 	
 	/** Gets an object of attributes or makes one if it doesn't exist. */
@@ -153,7 +274,7 @@ class PathAttributes {
 /** Sets up app with the HTML document. */
 window.addEventListener("load", function(ev) {
 	const node = document.querySelector("main svg");
-	const app = new DrawingApp(node);
+	const app = new Sketch(node);
 	const state = new PathAttributes();
 	/*
 	const logObserver = new MutationObserver(([{target}]) => {
